@@ -2,67 +2,108 @@ import streamlit as st
 import random
 import pandas as pd
 import altair as alt
-from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+import json
+from dataclasses import dataclass
+from typing import List, Dict
 
-# --- CUSTOM CSS ---
-# Custom styles to improve the visual appeal of the application.
+# --- CUSTOM CSS (TECHNO/CYBERPUNK THEME - HIGH CONTRAST LIGHT) ---
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&display=swap');
+
     /* General layout and background */
-    .main { 
-        background-color: #f0f2f6; /* Lighter grey background */
+    body, .main { 
+        background-color: #f0f2f6; /* Açık gri arka plan */
+        color: #2c3e50; /* Koyu metin rengi */
+        font-family: 'Rajdhani', sans-serif;
     }
 
     /* Card-like containers for content */
     .crisis-card {
-        background-color: #ffffff;
-        border-radius: 12px;
+        background-color: #ffffff; /* Beyaz kart zemini */
+        border-radius: 10px;
         padding: 20px;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.08);
         margin-bottom: 1rem;
-        border: 1px solid #e6e6e6;
-        /* Removed fixed height to allow cards to grow with content */
+        border: 1px solid #d1d9e6; /* Hafif çerçeve */
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease;
+    }
+    .crisis-card:hover {
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); /* Camgöbeği parlama */
+    }
+
+    /* News Ticker Styling */
+    .news-ticker {
+        background-color: #2c3e50; /* Koyu ana renk */
+        color: #f0f0f0; /* Açık metin */
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-family: 'monospace';
+        font-size: 0.95rem;
+        border: 1px solid #2c3e50;
+    }
+    .news-ticker h4 {
+        color: #00ffff; /* Camgöbeği başlık */
+        margin-bottom: 10px;
+        border-bottom: 1px solid #7f8c8d;
+        padding-bottom: 5px;
+    }
+    .news-ticker p {
+        margin-bottom: 5px;
     }
 
     /* Button styling */
     .stButton>button {
-        background-color: #1f77b4; /* Primary blue */
-        color: white;
+        background: linear-gradient(45deg, #00ffff, #ff00ff); /* Camgöbeği-Macenta gradyanı */
+        color: #ffffff; /* Beyaz metin */
         border-radius: 8px;
-        padding: 10px 24px;
-        font-weight: bold;
+        padding: 12px 28px;
+        font-weight: 700; /* Kalın font */
         border: none;
-        transition: background-color 0.3s ease;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
     }
     .stButton>button:hover {
-        background-color: #ff7f0e; /* Orange on hover */
+        box-shadow: 0 0 25px rgba(255, 0, 255, 0.8); /* Macenta parlama */
+        transform: scale(1.05);
     }
     .stButton>button:disabled {
-        background-color: #cccccc;
+        background: #cccccc;
         color: #666666;
+        box-shadow: none;
     }
 
-    /* Metric styling for positive/negative feedback */
-    .metric-positive { color: #2ca02c; font-weight: bold; } /* Green */
-    .metric-negative { color: #d62728; font-weight: bold; } /* Red */
+    /* Metric styling */
+    .metric-positive { color: #2ca02c; font-weight: bold; } /* Yeşil */
+    .metric-negative { color: #d62728; font-weight: bold; } /* Kırmızı */
 
-    /* Sidebar progress bar styling */
+    /* Sidebar styling */
+    .st-emotion-cache-16txtl3 {
+        background-color: #ffffff;
+    }
     .sidebar .stProgress > div > div > div > div {
-        background-color: #1f77b4;
+        background: linear-gradient(90deg, #00ffff, #ff00ff);
     }
     
-    /* Headings and text */
-    h1, h2, h3, h4, h5 { 
-        color: #2c3e50; /* Dark-blue-grey for text */
-        font-family: 'sans-serif';
+    /* Headings and text for readability */
+    h1, h2, h3 { 
+        color: #1f2937; /* Çok koyu gri */
+        font-weight: 700;
+    }
+    h4, h5 {
+        color: #ff00ff; /* Parlak Macenta */
+        font-weight: 700;
+    }
+    small {
+        color: #6b7280; /* Orta gri */
     }
 
     /* Expander styling */
     .st-expander {
         background-color: #fafafa;
         border-radius: 8px;
-        border: 1px solid #e6e6e6;
+        border: 1px solid #d1d9e6;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -102,92 +143,25 @@ class Scenario:
 # --- GAME CONTENT & CONFIGURATION ---
 # Centralized place for all game scenarios and initial settings.
 
-def get_scenarios() -> Dict[str, Scenario]:
-    """Returns a dictionary of all game scenarios, defined with the data models."""
-    return {
-        'pandemic': Scenario(
-            id='pandemic',
-            title='Pandemi Krizi',
-            icon=' ',
-            story="""
-                **Durum Raporu: Acil** Ada ülkesinde yeni bir varyant salgını patlak verdi. R(t) 1.5, hastaneler %80 dolu, yoğun bakım üniteleri sınırda.  
-                Sosyal medyada "bitkisel tedavi mucizesi" gibi sahte öneriler viral, aşı karşıtlığı %30 arttı.  
-                İletişim ağları tıkanık, panik stokçuluğu marketleri vurdu.  
-                **Görev**: CIO olarak, bilgi akışını düzenleyin, yanlış bilgiyi kontrol edin ve halk sağlığını korurken özgürlükleri dengeleyin.
-            """,
-            advisors=[
-                Advisor(name='Tuğgeneral Ayhan (Güvenlik)', text='Hız kritik! Genel karantina ve sosyal medya içerik kaldırma hemen uygulanmalı. Trol çiftlikleriyle sahte anlatıları bastırırız. **Risk**: Meşruiyet kaybı, ama kaosu önler.'),
-                Advisor(name='Av. Elif (Hukuk/Ombudsman)', text='Geniş kısıtlamalar mahremiyeti ve ifade özgürlüğünü çökertir. Hedefli izleme ve şeffaflık şart. **Risk**: Yavaş hareket, ama meşruiyet korur.'),
-                Advisor(name='Dr. Mert (Siyasi Danışman)', text='Halk panikte, şeffaf iletişim güven artırır. Prebunking ve fact-check kampanyalarıyla anlatıyı yönlendirin. **Risk**: Etki zaman alır.'),
-                Advisor(name='Zeynep, CTO (Teknik)', text='Decentralized izleme ve platformlarla MoU en verimli yol. Kendi acil platformumuzu devreye alalım, ama bağımsız yönetim şart. **Risk**: Teknik karmaşa.')
-            ],
-            action_cards=[
-                ActionCard(id='A', name='Merkezi İzleme + Geniş Kaldırma + Karantina', cost=50, hr_cost=20, speed='fast', security_effect=40, freedom_cost=30, side_effect_risk=0.4, safeguard_reduction=0.5, tooltip='Hızlı ama özgürlük maliyeti yüksek. Meşruiyet riski var.'),
-                ActionCard(id='B', name='Hedefli İzleme + Platform MoU + Yerel Kısıtlama', cost=30, hr_cost=15, speed='medium', security_effect=30, freedom_cost=15, side_effect_risk=0.2, safeguard_reduction=0.7, tooltip='Dengeli bir seçenek, güvencelerle daha etkili.'),
-                ActionCard(id='C', name='Prebunking + Okuryazarlık + Fact-Check + Uzman Paneli', cost=20, hr_cost=10, speed='slow', security_effect=20, freedom_cost=5, side_effect_risk=0.1, safeguard_reduction=0.8, tooltip='Yavaş ama sürdürülebilir, özgürlük dostu.')
-            ],
-            immediate_text="Seçiminiz devreye girdi: {}. Hastane doluluğu %20 düştü, ancak bazı vatandaşlar 'gizli izleme' iddialarıyla sosyal medyada tepki gösterdi. Medya, kararınızı tartışıyor.",
-            delayed_text="""
-                **Olay Günlüğü: Bir Hafta Sonra** Yanlış bilgi yayılımı %40 azaldı, ancak bir yanlış kaldırma davası açıldı.  
-                Uluslararası sağlık örgütleri kararınızı 'orantılı' buldu, ama halkın bir kısmı şeffaflık talep ediyor.  
-                **Not**: Güvenceler, özgürlük kaybını azalttı mı? Uzun vadeli etkiler dayanıklılığı nasıl etkiler?
-            """
-        ),
-        'forest_fire': Scenario(
-            id='forest_fire',
-            title='Orman Yangınları Krizi',
-            icon='🔥',
-            story="""
-                **Durum Raporu: Kritik** Ada ülkesinin güneyindeki ormanlar alevler içinde, rüzgâr yönü değişiyor. Sahte tahliye haritaları sosyal medyada yayılıyor, iletişim ağları aşırı yükte.  
-                Halk panikte, yanlış yönlendirmeler tahliyeyi zorlaştırıyor.  
-                **Görev**: CIO olarak, acil iletişim kanallarını açın, yanlış bilgiyi durdurun ve can güvenliğini özgürlüklerle dengeleyin.
-            """,
-            advisors=[
-                Advisor(name='Tuğgeneral Ayhan (Güvenlik)', text='Bölge genelinde sosyal medya kısıtlaması şart! Trol çiftlikleriyle doğru tahliye rotalarını duyururuz. **Risk**: Özgürlük kaybı, ama hayat kurtarır.'),
-                Advisor(name='Av. Elif (Hukuk/Ombudsman)', text='Geniş kısıtlamalar ifade özgürlüğünü zedeler. Hedefli iletişim ve şeffaflık raporu gerekir. **Risk**: Yavaş etki, ama meşruiyet korur.'),
-                Advisor(name='Dr. Mert (Siyasi Danışman)', text='Halkı sakin tutmak için medya okuryazarlığı kampanyası başlatın. Doğrulanmış haritalar güven artırır. **Risk**: Zaman alır.'),
-                Advisor(name='Zeynep, CTO (Teknik)', text='Cell-broadcast ve platformlarla MoU ile tahliye bilgisini hızlandırırız. **Risk**: Teknik koordinasyon zorluğu.')
-            ],
-            action_cards=[
-                ActionCard(id='A', name='Bölge Geniş Kısıtlama + Trol Karşı-Anlatı', cost=40, hr_cost=25, speed='fast', security_effect=35, freedom_cost=25, side_effect_risk=0.35, safeguard_reduction=0.6, tooltip='Hızlı ama ifade özgürlüğünü riske atar.'),
-                ActionCard(id='B', name='Cell-Broadcast + Zero-Rating Acil Siteler + Platform MoU', cost=25, hr_cost=15, speed='medium', security_effect=30, freedom_cost=10, side_effect_risk=0.15, safeguard_reduction=0.75, tooltip='Orta hızda, özgürlük dostu bir seçenek.'),
-                ActionCard(id='C', name='Bağımsız Medya Sahadan Canlı + Fact-Check Hızlı Şerit', cost=15, hr_cost=10, speed='slow', security_effect=25, freedom_cost=5, side_effect_risk=0.1, safeguard_reduction=0.85, tooltip='Yavaş, düşük riskli ve dayanıklılığı artırır.')
-            ],
-            immediate_text="Seçiminiz devreye girdi: {}. Tahliye işlemleri hızlandı, ancak bazı bölgelerde internet kesintileri şikayetlere yol açtı. Yerel medya, kararınızı sorguluyor.",
-            delayed_text="""
-                **Olay Günlüğü: Birkaç Gün Sonra** Yangın kontrol altına alındı, sahte haritaların etkisi %50 azaldı.  
-                Ancak, bazı vatandaşlar iletişim kısıtlamalarından şikayetçi. Uluslararası yardım ekipleri kararınızı 'etkili' buldu.  
-                **Not**: Şeffaflık, halkın güvenini nasıl etkiledi? Dayanıklılık gelecek krizlerde ne kadar önemli?
-            """
-        ),
-        'earthquake': Scenario(
-            id='earthquake',
-            title='Deprem Krizi',
-            icon='🌍',
-            story="""
-                **Durum Raporu: Acil** Ada ülkesinde 7.2 büyüklüğünde bir deprem vurdu. Baz istasyonlarının %40’ı devre dışı, “yağma” söylentileri sosyal medyada yayılıyor, yardım koordinasyonu aksıyor.  
-                Halk korku içinde, yanlış bilgiler arama-kurtarma çalışmalarını zorlaştırıyor.  
-                **Görev**: CIO olarak, iletişim ağlarını restore edin, yanlış bilgiyi kontrol edin ve can güvenliğini özgürlüklerle dengeleyin.
-            """,
-            advisors=[
-                Advisor(name='Tuğgeneral Ayhan (Güvenlik)', text='Ülke çapı içerik yavaşlatma ve geniş gözetim hemen uygulanmalı! **Risk**: Özgürlük kaybı, ama kaosu önler.'),
-                Advisor(name='Av. Elif (Hukuk/Ombudsman)', text='Hedefli trafik önceliği ve şeffaflık raporu şart. Geniş gözetim mahremiyeti zedeler. **Risk**: Yavaş etki.'),
-                Advisor(name='Dr. Mert (Siyasi Danışman)', text='Halkın güvenini kazanmak için fact-check şeridi ve açık veri panosu kullanın. **Risk**: Organizasyon zaman alır.'),
-                Advisor(name='Zeynep, CTO (Teknik)', text='Cell-broadcast ve platformlarla MoU ile yardım koordinasyonunu hızlandırırız. **Risk**: Teknik altyapı sınırlı.')
-            ],
-            action_cards=[
-                ActionCard(id='A', name='Ülke Çapı İçerik Yavaşlatma + Geniş Gözetim', cost=45, hr_cost=30, speed='fast', security_effect=45, freedom_cost=35, side_effect_risk=0.45, safeguard_reduction=0.5, tooltip='Hızlı ama yüksek özgürlük maliyeti.'),
-                ActionCard(id='B', name='Hedefli Trafik Önceliği + Platform MoU + Doğrulanmış Yardım Noktaları', cost=35, hr_cost=20, speed='medium', security_effect=35, freedom_cost=15, side_effect_risk=0.25, safeguard_reduction=0.7, tooltip='Dengeli, güvencelerle daha etkili.'),
-                ActionCard(id='C', name='Bağımsız Medya Hasar Doğrulama + Açık Veri Panosu', cost=25, hr_cost=15, speed='slow', security_effect=30, freedom_cost=10, side_effect_risk=0.15, safeguard_reduction=0.8, tooltip='Yavaş ama özgürlük dostu ve dayanıklı.')
-            ],
-            immediate_text="Seçiminiz devreye girdi: {}. Arama-kurtarma ekipleri koordinasyonu %30 iyileşti, ancak bazı kullanıcılar internet erişim sorunu bildirdi. Medya, kararınızı tartışıyor.",
-            delayed_text="""
-                **Olay Günlüğü: Birkaç Gün Sonra** Yağma söylentileri %60 azaldı, yardım dağıtımı verimli hale geldi.  
-                Ancak, bazı vatandaşlar gözetimden rahatsız. Uluslararası kurtarma ekipleri kararınızı 'etkili' buldu.  
-                **Not**: Güvenceler meşruiyeti nasıl etkiledi? Dayanıklılık gelecekte ne kadar kritik?
-            """
+@st.cache_data
+def load_scenarios_from_json(filepath: str = 'scenarios.json') -> Dict[str, Scenario]:
+    """Loads game scenarios from a JSON file and parses them into Scenario objects."""
+    with open(filepath, 'r', encoding='utf-8') as f:
+        scenarios_data = json.load(f)
+    
+    scenarios = {}
+    for key, data in scenarios_data.items():
+        scenarios[key] = Scenario(
+            id=key,
+            title=data['title'],
+            icon=data['icon'],
+            story=data['story'],
+            advisors=[Advisor(**advisor) for advisor in data['advisors']],
+            action_cards=[ActionCard(**card) for card in data['action_cards']],
+            immediate_text=data['immediate_text'],
+            delayed_text=data['delayed_text']
         )
-    }
+    return scenarios
 
 INITIAL_METRICS = {
     'security': 40, 'freedom': 70, 'public_trust': 50, 'resilience': 30, 'fatigue': 10
@@ -208,6 +182,7 @@ def initialize_game_state():
         st.session_state.budget = INITIAL_BUDGET
         st.session_state.human_resources = INITIAL_HR
         st.session_state.crisis_history = []
+        st.session_state.news_ticker = ["Oyun başladı. Ülke durumu stabil."]
         st.session_state.current_crisis_index = 0
         st.session_state.crisis_sequence = []
         st.session_state.selected_scenario_id = None
@@ -219,6 +194,13 @@ def reset_game():
     st.session_state.game_initialized = False
     initialize_game_state()
     st.rerun()
+
+def add_news(headline):
+    """Adds a new headline to the news ticker."""
+    st.session_state.news_ticker.insert(0, headline)
+    # Keep the ticker to a reasonable length
+    if len(st.session_state.news_ticker) > 5:
+        st.session_state.news_ticker.pop()
 
 def calculate_effects(action: ActionCard, scope: str, duration: str, safeguards: List[str]) -> Dict:
     """Calculates the effects of a player's decision on the game metrics."""
@@ -242,6 +224,14 @@ def calculate_effects(action: ActionCard, scope: str, duration: str, safeguards:
     public_trust_change = (TRUST_BOOST_FOR_TRANSPARENCY if 'transparency' in safeguards else 0) - (freedom_cost * 0.5)
     resilience_change = (action.security_effect * safeguard_quality / 2) if action.speed == 'slow' else 5
     fatigue_change = duration_multiplier * FATIGUE_PER_DURATION[scope]
+
+    # --- News Ticker Logic ---
+    if security_change > 15:
+        add_news(f"📈 GÜVENLİK ARTTI: '{action.name}' politikası sonrası tehdit seviyesi düştü.")
+    if freedom_cost > 15:
+        add_news(f"📉 ÖZGÜRLÜK TARTIŞMASI: Yeni kısıtlamalar sivil toplumdan tepki çekti.")
+    if 'transparency' in safeguards:
+        add_news("📰 ŞEFFAFLIK ADIMI: Hükümet, atılan adımlarla ilgili detaylı rapor yayınladı.")
 
     # --- Counter-factual analysis text ---
     if action.id == 'A':
@@ -295,10 +285,17 @@ def display_help_guide():
 def display_guidance(text: str):
     """Displays a styled guidance box."""
     st.markdown(f"""
-    <div class="crisis-card" style="background-color: #e8f0fe; border-left: 5px solid #1f77b4;">
+    <div class="crisis-card" style="background-color: #e8f0fe; border-left: 5px solid #00ffff;">
         💡 <strong>Rehber</strong>: {text}
     </div>
     """, unsafe_allow_html=True)
+
+def display_news_ticker():
+    """Displays the news ticker with recent headlines."""
+    st.markdown('<div class="news-ticker"><h4>Haber Akışı</h4>', unsafe_allow_html=True)
+    for news_item in st.session_state.news_ticker:
+        st.markdown(f"<p>• {news_item}</p>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # --- SCREEN RENDERERS ---
@@ -315,7 +312,7 @@ def start_game_screen():
     """, unsafe_allow_html=True)
     
     if st.button("Oyunu Başlat"):
-        scenarios = get_scenarios()
+        scenarios = load_scenarios_from_json()
         crisis_keys = list(scenarios.keys())
         random.shuffle(crisis_keys)
         st.session_state.crisis_sequence = crisis_keys[:MAX_CRISES]
@@ -326,7 +323,7 @@ def start_game_screen():
         st.rerun()
 
 def story_screen():
-    scenario = get_scenarios()[st.session_state.selected_scenario_id]
+    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
     st.title(f"{scenario.icon} Kriz {st.session_state.current_crisis_index + 1}: {scenario.title}")
 
     # Split the story into 'report' and 'mission' for a better layout
@@ -345,7 +342,7 @@ def story_screen():
     """, unsafe_allow_html=True)
 
     st.markdown(f"""
-        <div class="crisis-card" style="border-left: 5px solid #ff7f0e;">
+        <div class="crisis-card" style="border-left: 5px solid #ff00ff;">
             <h4>Görev</h4>
             <hr>
             <p>{mission_part}</p>
@@ -361,9 +358,11 @@ def story_screen():
         st.rerun()
 
 def advisors_screen():
-    scenario = get_scenarios()[st.session_state.selected_scenario_id]
+    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
     st.title("Danışman Görüşleri")
     
+    display_news_ticker()
+
     # Use columns to display advisor cards side-by-side
     cols = st.columns(len(scenario.advisors))
     for i, advisor in enumerate(scenario.advisors):
@@ -383,8 +382,10 @@ def advisors_screen():
         st.rerun()
 
 def decision_screen():
-    scenario = get_scenarios()[st.session_state.selected_scenario_id]
+    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
     st.title("Karar Paneli")
+
+    display_news_ticker()
 
     # Display resources
     st.markdown(f"""
@@ -402,7 +403,7 @@ def decision_screen():
     for i, card in enumerate(scenario.action_cards):
         with cols[i]:
             is_selected = selected_action_id == card.id
-            border_style = "border: 2px solid #ff7f0e;" if is_selected else "border: 1px solid #e6e6e6;"
+            border_style = "border: 2px solid #ff00ff;" if is_selected else "border: 1px solid #d1d9e6;"
             st.markdown(f"""
                 <div class="crisis-card" style="{border_style}">
                     <h5>{card.name}</h5>
@@ -452,12 +453,13 @@ def decision_screen():
                 st.rerun()
 
 def immediate_screen():
-    scenario = get_scenarios()[st.session_state.selected_scenario_id]
+    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
     action_name = next(card.name for card in scenario.action_cards if card.id == st.session_state.decision['action'])
     results = st.session_state.results
     old_metrics = st.session_state.metrics
 
     st.title("Anında Etki")
+    display_news_ticker()
     st.markdown(f"""
         <div class="crisis-card">
             <h3>Olay Günlüğü</h3>
@@ -476,7 +478,7 @@ def immediate_screen():
         st.rerun()
 
 def delayed_screen():
-    scenario = get_scenarios()[st.session_state.selected_scenario_id]
+    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
     
     # Apply delayed effects
     current_results = st.session_state.results
@@ -489,6 +491,7 @@ def delayed_screen():
     st.session_state.results = delayed_results
 
     st.title("Gecikmeli Etkiler")
+    display_news_ticker()
     st.markdown(f"""
         <div class="crisis-card">
             <h3>Olay Günlüğü</h3>
@@ -535,7 +538,7 @@ def report_screen():
     bar_chart = alt.Chart(report_df_melted).mark_bar().encode(
         x=alt.X('Durum:N', title=None, axis=alt.Axis(labels=True, ticks=False, domain=False)),
         y=alt.Y('Değer:Q', title='Puan', scale=alt.Scale(domain=[0, 100])),
-        color=alt.Color('Durum:N', title='Durum', scale=alt.Scale(domain=['Başlangıç', 'Son'], range=['#1f77b4', '#ff7f0e'])),
+        color=alt.Color('Durum:N', title='Durum', scale=alt.Scale(domain=['Başlangıç', 'Son'], range=['#00ffff', '#ff00ff'])),
         column=alt.Column('Gösterge:N', title='Metrikler', header=alt.Header(labelOrient='bottom', titleOrient='bottom'))
     ).properties(
         width=alt.Step(40), # Controls the width of the bars
@@ -638,12 +641,17 @@ def game_end_screen():
     line_chart = alt.Chart(history_df).mark_line(point=True).encode(
         x=alt.X('Kriz:O', sort=None, title='Aşama'),
         y=alt.Y('Değer:Q', title='Puan', scale=alt.Scale(domain=[0, 100])),
-        color=alt.Color('Gösterge:N', title='Metrikler'),
+        color=alt.Color('Gösterge:N', title='Metrikler', scale=alt.Scale(scheme='viridis')),
         tooltip=['Kriz', 'Gösterge', alt.Tooltip('Değer:Q', format='.1f')]
     ).properties(
         title='Krizler Boyunca Metrik Değişimleri',
         height=400
-    ).interactive()
+    ).configure_title(
+        fontSize=16,
+        anchor='middle'
+    ).configure_view(
+        stroke=None
+    )
     
     st.altair_chart(line_chart, use_container_width=True)
 
@@ -673,5 +681,4 @@ if current_screen_func:
     display_help_guide()
 else:
     st.error("Bir hata oluştu. Oyun yeniden başlatılıyor.")
-    reset_game()
- 
+    reset_
