@@ -293,6 +293,15 @@ def display_metrics_sidebar():
         st.sidebar.markdown(f"**{name}**")
         st.sidebar.progress(min(max(value / max_value, 0), 1))
         st.sidebar.markdown(f"<div style='text-align: right;'>{value:.1f} / {max_value}</div>", unsafe_allow_html=True)
+    
+    st.sidebar.write("---")
+    if st.session_state.screen != 'start_game' and st.session_state.screen != 'game_end':
+        if st.sidebar.button("Oyunu Bitir"):
+            # If the game ends before a round is finished, use current metrics for the final report
+            if not st.session_state.results:
+                st.session_state.results = st.session_state.metrics
+            st.session_state.screen = 'game_end'
+            st.rerun()
 
 def display_help_guide():
     """Displays the collapsible help guide."""
@@ -560,9 +569,7 @@ def delayed_screen():
 def report_screen():
     # Update metrics and history for the current round
     st.session_state.metrics = st.session_state.results.copy()
-    if len(st.session_state.crisis_history) <= st.session_state.current_crisis_index:
-        st.session_state.crisis_history.append(st.session_state.metrics)
-
+    
     st.title(f"Kriz {st.session_state.current_crisis_index + 1} Sonu Raporu")
     
     # Results Chart
@@ -626,6 +633,9 @@ def report_screen():
 
     if st.button("Sonraki Krize Geç"):
         st.session_state.current_crisis_index += 1
+        # Add the starting metrics for the next round to the history
+        st.session_state.crisis_history.append(st.session_state.metrics.copy())
+
         if st.session_state.current_crisis_index < len(st.session_state.crisis_sequence):
             st.session_state.selected_scenario_id = st.session_state.crisis_sequence[st.session_state.current_crisis_index]
             # Reset decision for the new round
@@ -678,8 +688,8 @@ def game_end_screen():
 
     # Line chart of metric history
     history_df = pd.DataFrame(st.session_state.crisis_history)
-    history_df['Kriz'] = [f"Kriz {i}" for i in range(len(history_df))]
-    history_df.loc[0, 'Kriz'] = "Başlangıç"
+    history_df['Kriz'] = [f"Kriz {i+1} Başlangıcı" for i in range(len(history_df))]
+    history_df.loc[0, 'Kriz'] = "Oyun Başlangıcı"
     
     history_df = history_df.melt(id_vars=['Kriz'], var_name='Gösterge', value_name='Değer')
     metric_map = {'security': 'Güvenlik', 'freedom': 'Özgürlük', 'public_trust': 'Kamu Güveni', 'resilience': 'Dayanıklılık', 'fatigue': 'Uyum Yorgunluğu'}
