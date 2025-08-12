@@ -250,6 +250,30 @@ def calculate_effects(action: ActionCard, scope: str, duration: str, safeguards:
         'human_resources': st.session_state.human_resources - action.hr_cost
     }
 
+def calculate_skip_turn_effects():
+    """Calculates the negative effects of skipping a turn due to lack of resources."""
+    add_news("🚨 KAYNAK YETERSİZ: Hükümet, kaynak yetersizliği nedeniyle krize müdahale edemedi.")
+    
+    # Define severe penalties for inaction
+    security_penalty = -25
+    trust_penalty = -20
+    resilience_penalty = -10
+    fatigue_increase = 15
+
+    # Create a generic counter-factual for inaction
+    counter_factual = "Kaynaklarınızı daha verimli kullanmış olsaydınız, bu krize müdahale edebilir ve daha büyük zararları önleyebilirdiniz."
+
+    return {
+        'security': min(100, max(0, st.session_state.metrics['security'] + security_penalty)),
+        'freedom': st.session_state.metrics['freedom'], # No direct impact on freedom
+        'public_trust': min(100, max(0, st.session_state.metrics['public_trust'] + trust_penalty)),
+        'resilience': min(100, max(0, st.session_state.metrics['resilience'] + resilience_penalty)),
+        'fatigue': min(100, max(0, st.session_state.metrics['fatigue'] + fatigue_increase)),
+        'counter_factual': counter_factual,
+        'budget': st.session_state.budget, # No change in resources
+        'human_resources': st.session_state.human_resources
+    }
+
 # --- UI COMPONENTS ---
 # Reusable functions for rendering parts of the UI.
 
@@ -395,55 +419,68 @@ def decision_screen():
         </div>
     """, unsafe_allow_html=True)
 
-    # Action selection using cards
-    st.subheader("Aksiyon Seç")
-    cols = st.columns(len(scenario.action_cards))
-    selected_action_id = st.session_state.decision.get('action')
+    # Check if any action is affordable
+    affordable_actions = [card for card in scenario.action_cards if st.session_state.budget >= card.cost and st.session_state.human_resources >= card.hr_cost]
 
-    for i, card in enumerate(scenario.action_cards):
-        with cols[i]:
-            is_selected = selected_action_id == card.id
-            border_style = "border: 2px solid #ff00ff;" if is_selected else "border: 1px solid #d1d9e6;"
-            st.markdown(f"""
-                <div class="crisis-card" style="{border_style}">
-                    <h5>{card.name}</h5>
-                    <p>{card.tooltip}</p>
-                    <small>Maliyet: {card.cost} 💰 | HR: {card.hr_cost} 👥 | Hız: {card.speed.capitalize()}</small>
-                </div>
-            """, unsafe_allow_html=True)
-            if st.button("Bunu Seç", key=f"select_{card.id}"):
-                st.session_state.decision['action'] = card.id
-                st.rerun()
-    
-    if selected_action_id:
-        # Policy adjustments
-        st.subheader("Politika Ayarları")
-        with st.container():
-            st.markdown('<div class="crisis-card">', unsafe_allow_html=True)
-            c1, c2 = st.columns(2)
-            with c1:
-                scope = st.radio("Kapsam:", ["Hedefli", "Genel"], key="scope")
-            with c2:
-                duration = st.radio("Süre:", ["Kısa", "Orta", "Uzun"], key="duration")
-            
-            st.subheader("Güvenceler")
-            safeguards = []
-            if st.checkbox("🛡️ Şeffaflık Raporu (Kamu güvenini artırır, özgürlük kaybını azaltır)"): safeguards.append("transparency")
-            if st.checkbox("⚖️ İtiraz Mekanizması (Hatalı kararları düzeltme şansı sunar)"): safeguards.append("appeal")
-            if st.checkbox("⏳ Otomatik Sona Erdirme (Normalleşme kaymasını önler)"): safeguards.append("sunset")
-            st.markdown('</div>', unsafe_allow_html=True)
+    if not affordable_actions:
+        st.warning("Kaynaklarınız yetersiz! Hiçbir politikayı uygulayacak bütçeniz veya insan kaynağınız kalmadı.")
+        if st.button("Turu Atla (Negatif Sonuçlar Doğurur)"):
+            results = calculate_skip_turn_effects()
+            st.session_state.results = results
+            st.session_state.decision = {'action': 'SKIP', 'skipped': True}
+            st.session_state.screen = 'immediate'
+            st.rerun()
+    else:
+        # Action selection using cards
+        st.subheader("Aksiyon Seç")
+        cols = st.columns(len(scenario.action_cards))
+        selected_action_id = st.session_state.decision.get('action')
 
-        if st.button("Uygula"):
-            action = next(card for card in scenario.action_cards if card.id == selected_action_id)
-            
-            # Check for resources
-            if st.session_state.budget < action.cost or st.session_state.human_resources < action.hr_cost:
-                st.error(f"Bütçe ({st.session_state.budget}/{action.cost}) veya insan kaynağı ({st.session_state.human_resources}/{action.hr_cost}) yetersiz! Daha düşük maliyetli bir aksiyon seçin.")
-            else:
+        for i, card in enumerate(scenario.action_cards):
+            with cols[i]:
+                # Disable card if not affordable
+                is_affordable = st.session_state.budget >= card.cost and st.session_state.human_resources >= card.hr_cost
+                
+                is_selected = selected_action_id == card.id
+                border_style = "border: 2px solid #ff00ff;" if is_selected else "border: 1px solid #d1d9e6;"
+                
+                st.markdown(f"""
+                    <div class="crisis-card" style="{border_style}">
+                        <h5>{card.name}</h5>
+                        <p>{card.tooltip}</p>
+                        <small>Maliyet: {card.cost} 💰 | HR: {card.hr_cost} 👥 | Hız: {card.speed.capitalize()}</small>
+                    </div>
+                """, unsafe_allow_html=True)
+                if st.button("Bunu Seç", key=f"select_{card.id}", disabled=not is_affordable):
+                    st.session_state.decision['action'] = card.id
+                    st.rerun()
+        
+        if selected_action_id:
+            # Policy adjustments
+            st.subheader("Politika Ayarları")
+            with st.container():
+                st.markdown('<div class="crisis-card">', unsafe_allow_html=True)
+                c1, c2 = st.columns(2)
+                with c1:
+                    scope = st.radio("Kapsam:", ["Hedefli", "Genel"], key="scope")
+                with c2:
+                    duration = st.radio("Süre:", ["Kısa", "Orta", "Uzun"], key="duration")
+                
+                st.subheader("Güvenceler")
+                safeguards = []
+                if st.checkbox("🛡️ Şeffaflık Raporu (Kamu güvenini artırır, özgürlük kaybını azaltır)"): safeguards.append("transparency")
+                if st.checkbox("⚖️ İtiraz Mekanizması (Hatalı kararları düzeltme şansı sunar)"): safeguards.append("appeal")
+                if st.checkbox("⏳ Otomatik Sona Erdirme (Normalleşme kaymasını önler)"): safeguards.append("sunset")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            if st.button("Uygula"):
+                action = next(card for card in scenario.action_cards if card.id == selected_action_id)
+                
                 st.session_state.decision.update({
                     'scope': 'targeted' if scope == "Hedefli" else 'general',
                     'duration': {'Kısa': 'short', 'Orta': 'medium', 'Uzun': 'long'}[duration],
-                    'safeguards': safeguards
+                    'safeguards': safeguards,
+                    'skipped': False
                 })
                 results = calculate_effects(action, st.session_state.decision['scope'], st.session_state.decision['duration'], safeguards)
                 st.session_state.results = results
@@ -453,17 +490,23 @@ def decision_screen():
                 st.rerun()
 
 def immediate_screen():
-    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
-    action_name = next(card.name for card in scenario.action_cards if card.id == st.session_state.decision['action'])
     results = st.session_state.results
     old_metrics = st.session_state.metrics
 
     st.title("Anında Etki")
     display_news_ticker()
+
+    if st.session_state.decision.get('skipped'):
+        immediate_text = "Kaynak yetersizliği nedeniyle hükümet krize müdahale edemedi. Bu durum, krizin etkilerini derinleştirdi ve halk arasında endişeye yol açtı."
+    else:
+        scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
+        action_name = next(card.name for card in scenario.action_cards if card.id == st.session_state.decision['action'])
+        immediate_text = scenario.immediate_text.format(f"<b>{action_name}</b>")
+    
     st.markdown(f"""
         <div class="crisis-card">
             <h3>Olay Günlüğü</h3>
-            <p>{scenario.immediate_text.format(f"<b>{action_name}</b>")}</p>
+            <p>{immediate_text}</p>
             <h4>Durum Güncellemesi</h4>
             <ul>
                 <li><strong>Güvenlik</strong>: <span class="{'metric-positive' if results['security'] > old_metrics['security'] else 'metric-negative'}">{results['security']:.1f}</span> – Krizin acil etkileri hafifledi.</li>
@@ -478,24 +521,29 @@ def immediate_screen():
         st.rerun()
 
 def delayed_screen():
-    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
-    
     # Apply delayed effects
     current_results = st.session_state.results
     delayed_results = {
         **current_results,
-        'security': min(100, current_results['security'] + (10 if st.session_state.decision['action'] == 'C' else 5)),
-        'resilience': min(100, current_results['resilience'] + (10 if st.session_state.decision['action'] == 'C' else 5)),
+        'security': min(100, current_results['security'] + (10 if st.session_state.decision.get('action') == 'C' else 5)),
+        'resilience': min(100, current_results['resilience'] + (10 if st.session_state.decision.get('action') == 'C' else 5)),
         'public_trust': min(100, max(0, current_results['public_trust'] - (3 if random.random() > 0.7 else 0)))
     }
     st.session_state.results = delayed_results
 
     st.title("Gecikmeli Etkiler")
     display_news_ticker()
+
+    if st.session_state.decision.get('skipped'):
+        delayed_text = "Eylemsizliğin uzun vadeli sonuçları ağır oldu. Toparlanma süreci yavaşlarken, gelecekteki krizlere karşı ülkenin dayanıklılığı ciddi şekilde azaldı."
+    else:
+        scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
+        delayed_text = scenario.delayed_text
+
     st.markdown(f"""
         <div class="crisis-card">
             <h3>Olay Günlüğü</h3>
-            <p>{scenario.delayed_text}</p>
+            <p>{delayed_text}</p>
             <h4>Uzun Vadeli Etkiler</h4>
             <ul>
                 <li><strong>Dayanıklılık</strong>: <span class="{'metric-positive' if delayed_results['resilience'] > current_results['resilience'] else 'metric-negative'}">{delayed_results['resilience']:.1f}</span> – Eğitim gelecek krizlere hazırladı.</li>
@@ -559,7 +607,7 @@ def report_screen():
         <div class="crisis-card">
             <h3>Karşı-Olgu Analizi</h3>
             <p><i>{st.session_state.results['counter_factual']}</i></p>
-            <p><strong>Analiz:</strong> Geniş kapsam veya uzun süre, ifade ve mahremiyeti etkiledi. Seçtiğiniz <strong>{len(st.session_state.decision['safeguards'])} güvence</strong>, özgürlük kaybını yaklaşık %{len(st.session_state.decision['safeguards']) * 15} oranında azalttı.</p>
+            <p><strong>Analiz:</strong> Geniş kapsam veya uzun süre, ifade ve mahremiyeti etkiledi. Seçtiğiniz <strong>{len(st.session_state.decision.get('safeguards', []))} güvence</strong>, özgürlük kaybını yaklaşık %{len(st.session_state.decision.get('safeguards', [])) * 15} oranında azalttı.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -681,4 +729,4 @@ if current_screen_func:
     display_help_guide()
 else:
     st.error("Bir hata oluştu. Oyun yeniden başlatılıyor.")
-    reset_
+    reset_game()
