@@ -3,8 +3,9 @@ import random
 import pandas as pd
 import altair as alt
 import json
-from dataclasses import dataclass
-from typing import List, Dict
+from dataclasses import dataclass, field
+from typing import List, Dict, Any
+from pathlib import Path
 
 # --- CUSTOM CSS (TECHNO/CYBERPUNK THEME - HIGH CONTRAST LIGHT) ---
 st.markdown("""
@@ -144,31 +145,37 @@ class Scenario:
 # Centralized place for all game scenarios and initial settings.
 
 @st.cache_data
-def load_scenarios_from_json(filepath: str = 'scenarios.json') -> Dict[str, Scenario]:
-    """Loads game scenarios from a JSON file and parses them into Scenario objects."""
-    with open(filepath, 'r', encoding='utf-8') as f:
-        scenarios_data = json.load(f)
+def load_json_data(filepath: str, _cache_bust: float) -> Dict:
+    """Loads any JSON file. _cache_bust (e.g., file mtime) invalidates cache when file changes."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        st.error(f"Hata: {filepath} dosyası bulunamadı. Lütfen dosyanın mevcut olduğundan emin olun.")
+        return None
+
+def get_scenarios() -> Dict[str, Scenario]:
+    """Parses scenario data from the loaded JSON into Scenario objects."""
+    scenarios_path = (Path(__file__).parent / 'scenarios.json')
+    scenarios_data = load_json_data(str(scenarios_path), scenarios_path.stat().st_mtime)
+    if not scenarios_data:
+        return {}
     
     scenarios = {}
     for key, data in scenarios_data.items():
-        scenarios[key] = Scenario(
-            id=key,
-            title=data['title'],
-            icon=data['icon'],
-            story=data['story'],
-            advisors=[Advisor(**advisor) for advisor in data['advisors']],
-            action_cards=[ActionCard(**card) for card in data['action_cards']],
-            immediate_text=data['immediate_text'],
-            delayed_text=data['delayed_text']
-        )
+        # JSON'daki "action_cards" gibi anahtarları kontrol et
+        if 'action_cards' in data and 'advisors' in data:
+            scenarios[key] = Scenario(
+                id=key,
+                title=data.get('title', 'Başlıksız Senaryo'),
+                icon=data.get('icon', '❓'),
+                story=data.get('story', ''),
+                advisors=[Advisor(**advisor) for advisor in data['advisors']],
+                action_cards=[ActionCard(**card) for card in data['action_cards']],
+                immediate_text=data.get('immediate_text', ''),
+                delayed_text=data.get('delayed_text', '')
+            )
     return scenarios
-
-INITIAL_METRICS = {
-    'security': 40, 'freedom': 70, 'public_trust': 50, 'resilience': 30, 'fatigue': 10
-}
-INITIAL_BUDGET = 100
-INITIAL_HR = 50
-MAX_CRISES = 3
 
 # --- GAME LOGIC ---
 # Core functions that manage game state and calculate outcomes.
@@ -176,11 +183,19 @@ MAX_CRISES = 3
 def initialize_game_state():
     """Sets up the session state for a new game if it doesn't exist."""
     if 'game_initialized' not in st.session_state:
+        cfg_path = (Path(__file__).parent / 'config.json')
+        config = load_json_data(str(cfg_path), cfg_path.stat().st_mtime)
+        if not config:
+            st.stop() # Stop execution if config is not found
+        
+        settings = config.get('initial_settings', {})
+        
         st.session_state.game_initialized = True
         st.session_state.screen = 'start_game'
-        st.session_state.metrics = INITIAL_METRICS.copy()
-        st.session_state.budget = INITIAL_BUDGET
-        st.session_state.human_resources = INITIAL_HR
+        st.session_state.metrics = settings.get('metrics', {}).copy()
+        st.session_state.budget = settings.get('budget', 100)
+        st.session_state.human_resources = settings.get('hr', 50)
+        st.session_state.max_crises = settings.get('max_crises', 3)
         st.session_state.crisis_history = []
         st.session_state.news_ticker = ["Oyun başladı. Ülke durumu stabil."]
         st.session_state.current_crisis_index = 0
@@ -188,6 +203,7 @@ def initialize_game_state():
         st.session_state.selected_scenario_id = None
         st.session_state.decision = {}
         st.session_state.results = None
+        st.session_state.config = config # Store config in session state
 
 def reset_game():
     """Resets the game to its initial state."""
@@ -198,22 +214,23 @@ def reset_game():
 def add_news(headline):
     """Adds a new headline to the news ticker."""
     st.session_state.news_ticker.insert(0, headline)
-    # Keep the ticker to a reasonable length
     if len(st.session_state.news_ticker) > 5:
         st.session_state.news_ticker.pop()
 
 def calculate_effects(action: ActionCard, scope: str, duration: str, safeguards: List[str]) -> Dict:
     """Calculates the effects of a player's decision on the game metrics."""
-    # --- Constants for calculation clarity ---
-    THREAT_SEVERITY = 80
-    RANDOM_FACTOR_RANGE = (0.1, 0.3)
-    SCOPE_MULTIPLIERS = {'targeted': 0.7, 'general': 1.3}
-    DURATION_MULTIPLIERS = {'short': 0.5, 'medium': 1.0, 'long': 1.5}
-    SAFEGUARD_QUALITY_PER_ITEM = 0.2
-    TRUST_BOOST_FOR_TRANSPARENCY = 10
-    FATIGUE_PER_DURATION = {'targeted': 5, 'general': 10}
+    # --- Load balance parameters from config ---
+    balance = st.session_state.config['game_balance']
+    
+    THREAT_SEVERITY = balance['THREAT_SEVERITY']
+    RANDOM_FACTOR_RANGE = tuple(balance['RANDOM_FACTOR_RANGE'])
+    SCOPE_MULTIPLIERS = balance['SCOPE_MULTIPLIERS']
+    DURATION_MULTIPLIERS = balance['DURATION_MULTIPLIERS']
+    SAFEGUARD_QUALITY_PER_ITEM = balance['SAFEGUARD_QUALITY_PER_ITEM']
+    TRUST_BOOST_FOR_TRANSPARENCY = balance['TRUST_BOOST_FOR_TRANSPARENCY']
+    FATIGUE_PER_DURATION = balance['FATIGUE_PER_DURATION']
 
-    # --- Calculation logic ---
+    # --- Calculation logic (unchanged, but now uses variables from config) ---
     random_factor = random.uniform(*RANDOM_FACTOR_RANGE)
     scope_multiplier = SCOPE_MULTIPLIERS[scope]
     duration_multiplier = DURATION_MULTIPLIERS[duration]
@@ -254,23 +271,20 @@ def calculate_skip_turn_effects():
     """Calculates the negative effects of skipping a turn due to lack of resources."""
     add_news("🚨 KAYNAK YETERSİZ: Hükümet, kaynak yetersizliği nedeniyle krize müdahale edemedi.")
     
-    # Define severe penalties for inaction
     security_penalty = -25
     trust_penalty = -20
     resilience_penalty = -10
     fatigue_increase = 15
-
-    # Create a generic counter-factual for inaction
     counter_factual = "Kaynaklarınızı daha verimli kullanmış olsaydınız, bu krize müdahale edebilir ve daha büyük zararları önleyebilirdiniz."
 
     return {
         'security': min(100, max(0, st.session_state.metrics['security'] + security_penalty)),
-        'freedom': st.session_state.metrics['freedom'], # No direct impact on freedom
+        'freedom': st.session_state.metrics['freedom'],
         'public_trust': min(100, max(0, st.session_state.metrics['public_trust'] + trust_penalty)),
         'resilience': min(100, max(0, st.session_state.metrics['resilience'] + resilience_penalty)),
         'fatigue': min(100, max(0, st.session_state.metrics['fatigue'] + fatigue_increase)),
         'counter_factual': counter_factual,
-        'budget': st.session_state.budget, # No change in resources
+        'budget': st.session_state.budget,
         'human_resources': st.session_state.human_resources
     }
 
@@ -280,6 +294,15 @@ def calculate_skip_turn_effects():
 def display_metrics_sidebar():
     """Displays the main status dashboard in the sidebar."""
     st.sidebar.header("📊 Durum Panosu")
+    
+    # Show current crisis count
+    if 'crisis_sequence' in st.session_state and st.session_state.crisis_sequence:
+        st.sidebar.markdown(f"### KRİZ {st.session_state.current_crisis_index + 1} / {len(st.session_state.crisis_sequence)}")
+
+    settings = st.session_state.config['initial_settings']
+    INITIAL_BUDGET = settings['budget']
+    INITIAL_HR = settings['hr']
+    
     metrics_data = [
         ('Bütçe', st.session_state.budget, INITIAL_BUDGET),
         ('İnsan Kaynağı', st.session_state.human_resources, INITIAL_HR),
@@ -295,9 +318,8 @@ def display_metrics_sidebar():
         st.sidebar.markdown(f"<div style='text-align: right;'>{value:.1f} / {max_value}</div>", unsafe_allow_html=True)
     
     st.sidebar.write("---")
-    if st.session_state.screen != 'start_game' and st.session_state.screen != 'game_end':
+    if st.session_state.screen not in ['start_game', 'game_end']:
         if st.sidebar.button("Oyunu Bitir"):
-            # If the game ends before a round is finished, use current metrics for the final report
             if not st.session_state.results:
                 st.session_state.results = st.session_state.metrics
             st.session_state.screen = 'game_end'
@@ -338,17 +360,27 @@ def start_game_screen():
     st.title("🛡️ CIO Kriz Yönetimi Oyunu")
     st.markdown("""
         <div class="crisis-card">
-            <h2>Hoş Geldiniz!</h2>
-            <p>Bu oyunda, bir CIO (Chief Information Officer) olarak, ada ülkenizi vuran bir dizi krizle yüzleşeceksiniz. Kararlarınız halkın güvenliğini, özgürlüklerini ve gelecekteki krizlere karşı dayanıklılığını şekillendirecek.</p>
-            <p>Üç krizlik bir mücadele sizi bekliyor. Her kriz, bir önceki kararlarınızın sonuçlarını miras alacak. Hazır mısınız?</p>
+            <h2>Hoş Geldin!</h2>
+            <p>.... adasının bilgi şefi sensin! Burası sakin ve huzurlu bir ada… ama son zamanlarda depremden sele, yangından siber saldırıya kadar krizler peşini bırakmıyor.</p>
+            <p>Senin görevin, halkın doğru bilgiye ulaşmasını sağlamak ve yanlış bilgileri engellemek. Fakat bunu yaparken halkın haklarını veya özgürlüğünü kısıtlamadan yapmaya çalışmak zorundasın.</p>
+            <p>Her kriz kartında sana farklı danışmanlar yol gösterecek, onların önerilerini dikkatle dinle ve ardından 3 aksiyon kartından birini seç. Seçimin, adanın Bütçe, İnsan Kaynağı, Güvenlik, Özgürlük, Kamu Güveni, Dayanıklılık ve Uyum Yorgunluğu değerlerini etkiler.</p>
+            <p><b>Amaç:</b> krizleri yönetirken adalıların hem güvenliğini hem özgürlüğünü korumak!<br>Bakalım adayı hem güvenli hem özgür tutabilecek bir lider misin?</p>
         </div>
     """, unsafe_allow_html=True)
     
-    if st.button("Oyunu Başlat"):
-        scenarios = load_scenarios_from_json()
-        crisis_keys = list(scenarios.keys())
+    scenarios = get_scenarios()
+    keys = list(scenarios.keys())
+    if not keys:
+        st.warning('Hiç senaryo bulunamadı. Lütfen editörden en az bir senaryo ekleyin ve tekrar deneyin.')
+        return
+    selected = st.multiselect('Bu oyunda oynanacak senaryolar:', options=keys, default=keys, help='Listeyi daraltarak yeni eklediğiniz senaryonun seçildiğinden emin olun.')
+    if st.button('Oyunu Başlat'):
+        crisis_keys = selected or keys
+        if not crisis_keys:
+            st.warning('Başlamak için en az bir senaryo seçin.')
+            return
         random.shuffle(crisis_keys)
-        st.session_state.crisis_sequence = crisis_keys[:MAX_CRISES]
+        st.session_state.crisis_sequence = crisis_keys[:st.session_state.max_crises]
         st.session_state.current_crisis_index = 0
         st.session_state.crisis_history.append(st.session_state.metrics.copy())
         st.session_state.selected_scenario_id = st.session_state.crisis_sequence[0]
@@ -356,34 +388,23 @@ def start_game_screen():
         st.rerun()
 
 def story_screen():
-    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
+    scenario = get_scenarios()[st.session_state.selected_scenario_id]
     st.title(f"{scenario.icon} Kriz {st.session_state.current_crisis_index + 1}: {scenario.title}")
 
-    # Split the story into 'report' and 'mission' for a better layout
     try:
         report_part, mission_part = scenario.story.split("**Görev**:")
     except ValueError:
-        # Fallback if the delimiter is not found
         report_part = scenario.story
         mission_part = ""
 
-    # Display cards vertically to prevent overflow
-    st.markdown(f"""
-        <div class="crisis-card">
-            {report_part}
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
+    st.markdown(f'<div class="crisis-card">{report_part}</div>', unsafe_allow_html=True)
+    st.markdown(f'''
         <div class="crisis-card" style="border-left: 5px solid #ff00ff;">
-            <h4>Görev</h4>
-            <hr>
-            <p>{mission_part}</p>
+            <h4>Görev</h4><hr><p>{mission_part}</p>
         </div>
-    """, unsafe_allow_html=True)
+    ''', unsafe_allow_html=True)
     
-    st.write("") # Spacer
-
+    st.write("")
     display_guidance("Kararlarınız can güvenliğini artırabilir, ancak özgürlükleri ve halkın güvenini etkileyebilir. Dengeyi bulmaya hazır mısınız?")
     
     if st.button("Danışmanları Dinle"):
@@ -391,20 +412,16 @@ def story_screen():
         st.rerun()
 
 def advisors_screen():
-    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
+    scenario = get_scenarios()[st.session_state.selected_scenario_id]
     st.title("Danışman Görüşleri")
-    
     display_news_ticker()
 
-    # Use columns to display advisor cards side-by-side
     cols = st.columns(len(scenario.advisors))
     for i, advisor in enumerate(scenario.advisors):
         with cols[i]:
             st.markdown(f"""
             <div class="crisis-card">
-                <h5>{advisor.name}</h5>
-                <hr>
-                <p>{advisor.text}</p>
+                <h5>{advisor.name}</h5><hr><p>{advisor.text}</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -415,12 +432,10 @@ def advisors_screen():
         st.rerun()
 
 def decision_screen():
-    scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
+    scenario = get_scenarios()[st.session_state.selected_scenario_id]
     st.title("Karar Paneli")
-
     display_news_ticker()
 
-    # Display resources
     st.markdown(f"""
         <div class="crisis-card">
             <h3>Kaynaklar</h3>
@@ -428,7 +443,6 @@ def decision_screen():
         </div>
     """, unsafe_allow_html=True)
 
-    # Check if any action is affordable
     affordable_actions = [card for card in scenario.action_cards if st.session_state.budget >= card.cost and st.session_state.human_resources >= card.hr_cost]
 
     if not affordable_actions:
@@ -440,23 +454,19 @@ def decision_screen():
             st.session_state.screen = 'immediate'
             st.rerun()
     else:
-        # Action selection using cards
         st.subheader("Aksiyon Seç")
         cols = st.columns(len(scenario.action_cards))
         selected_action_id = st.session_state.decision.get('action')
 
         for i, card in enumerate(scenario.action_cards):
             with cols[i]:
-                # Disable card if not affordable
                 is_affordable = st.session_state.budget >= card.cost and st.session_state.human_resources >= card.hr_cost
-                
                 is_selected = selected_action_id == card.id
                 border_style = "border: 2px solid #ff00ff;" if is_selected else "border: 1px solid #d1d9e6;"
                 
                 st.markdown(f"""
                     <div class="crisis-card" style="{border_style}">
-                        <h5>{card.name}</h5>
-                        <p>{card.tooltip}</p>
+                        <h5>{card.name}</h5><p>{card.tooltip}</p>
                         <small>Maliyet: {card.cost} 💰 | HR: {card.hr_cost} 👥 | Hız: {card.speed.capitalize()}</small>
                     </div>
                 """, unsafe_allow_html=True)
@@ -465,9 +475,8 @@ def decision_screen():
                     st.rerun()
         
         if selected_action_id:
-            # Policy adjustments
             st.subheader("Politika Ayarları")
-            with st.container():
+            with st.container(border=False):
                 st.markdown('<div class="crisis-card">', unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
                 with c1:
@@ -508,14 +517,13 @@ def immediate_screen():
     if st.session_state.decision.get('skipped'):
         immediate_text = "Kaynak yetersizliği nedeniyle hükümet krize müdahale edemedi. Bu durum, krizin etkilerini derinleştirdi ve halk arasında endişeye yol açtı."
     else:
-        scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
+        scenario = get_scenarios()[st.session_state.selected_scenario_id]
         action_name = next(card.name for card in scenario.action_cards if card.id == st.session_state.decision['action'])
         immediate_text = scenario.immediate_text.format(f"<b>{action_name}</b>")
     
     st.markdown(f"""
         <div class="crisis-card">
-            <h3>Olay Günlüğü</h3>
-            <p>{immediate_text}</p>
+            <h3>Olay Günlüğü</h3><p>{immediate_text}</p>
             <h4>Durum Güncellemesi</h4>
             <ul>
                 <li><strong>Güvenlik</strong>: <span class="{'metric-positive' if results['security'] > old_metrics['security'] else 'metric-negative'}">{results['security']:.1f}</span> – Krizin acil etkileri hafifledi.</li>
@@ -530,7 +538,6 @@ def immediate_screen():
         st.rerun()
 
 def delayed_screen():
-    # Apply delayed effects
     current_results = st.session_state.results
     delayed_results = {
         **current_results,
@@ -546,13 +553,12 @@ def delayed_screen():
     if st.session_state.decision.get('skipped'):
         delayed_text = "Eylemsizliğin uzun vadeli sonuçları ağır oldu. Toparlanma süreci yavaşlarken, gelecekteki krizlere karşı ülkenin dayanıklılığı ciddi şekilde azaldı."
     else:
-        scenario = load_scenarios_from_json()[st.session_state.selected_scenario_id]
+        scenario = get_scenarios()[st.session_state.selected_scenario_id]
         delayed_text = scenario.delayed_text
 
     st.markdown(f"""
         <div class="crisis-card">
-            <h3>Olay Günlüğü</h3>
-            <p>{delayed_text}</p>
+            <h3>Olay Günlüğü</h3><p>{delayed_text}</p>
             <h4>Uzun Vadeli Etkiler</h4>
             <ul>
                 <li><strong>Dayanıklılık</strong>: <span class="{'metric-positive' if delayed_results['resilience'] > current_results['resilience'] else 'metric-negative'}">{delayed_results['resilience']:.1f}</span> – Eğitim gelecek krizlere hazırladı.</li>
@@ -567,15 +573,10 @@ def delayed_screen():
         st.rerun()
 
 def report_screen():
-    # Update metrics and history for the current round
     st.session_state.metrics = st.session_state.results.copy()
-    
     st.title(f"Kriz {st.session_state.current_crisis_index + 1} Sonu Raporu")
     
-    # Results Chart
     st.markdown('<div class="crisis-card"><h3>Sonuçlar</h3>', unsafe_allow_html=True)
-    
-    # Get previous metrics from history
     previous_metrics = st.session_state.crisis_history[st.session_state.current_crisis_index]
     current_metrics = st.session_state.metrics
 
@@ -587,7 +588,6 @@ def report_screen():
         {'Gösterge': 'Uyum Yorgunluğu', 'Başlangıç': previous_metrics['fatigue'], 'Son': current_metrics['fatigue']}
     ])
     
-    # Prepare data for the grouped bar chart
     report_df_melted = df.melt(id_vars=['Gösterge'], value_vars=['Başlangıç', 'Son'], var_name='Durum', value_name='Değer')
     
     bar_chart = alt.Chart(report_df_melted).mark_bar().encode(
@@ -595,21 +595,11 @@ def report_screen():
         y=alt.Y('Değer:Q', title='Puan', scale=alt.Scale(domain=[0, 100])),
         color=alt.Color('Durum:N', title='Durum', scale=alt.Scale(domain=['Başlangıç', 'Son'], range=['#00ffff', '#ff00ff'])),
         column=alt.Column('Gösterge:N', title='Metrikler', header=alt.Header(labelOrient='bottom', titleOrient='bottom'))
-    ).properties(
-        width=alt.Step(40), # Controls the width of the bars
-        title='Metriklerin Başlangıç ve Son Değerleri'
-    ).configure_title(
-        fontSize=16,
-        anchor='middle'
-    ).configure_view(
-        stroke=None
-    )
+    ).properties(width=alt.Step(40), title='Metriklerin Başlangıç ve Son Değerleri').configure_title(fontSize=16, anchor='middle').configure_view(stroke=None)
     
     st.altair_chart(bar_chart, use_container_width=False)
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-    # Counter-factual analysis
     st.markdown(f"""
         <div class="crisis-card">
             <h3>Karşı-Olgu Analizi</h3>
@@ -618,7 +608,6 @@ def report_screen():
         </div>
     """, unsafe_allow_html=True)
 
-    # Real-world connection
     st.markdown("""
         <div class="crisis-card">
             <h3>Gerçek Dünya Bağlantısı</h3>
@@ -633,12 +622,10 @@ def report_screen():
 
     if st.button("Sonraki Krize Geç"):
         st.session_state.current_crisis_index += 1
-        # Add the starting metrics for the next round to the history
         st.session_state.crisis_history.append(st.session_state.metrics.copy())
 
         if st.session_state.current_crisis_index < len(st.session_state.crisis_sequence):
             st.session_state.selected_scenario_id = st.session_state.crisis_sequence[st.session_state.current_crisis_index]
-            # Reset decision for the new round
             st.session_state.decision = {}
             st.session_state.screen = 'story'
         else:
@@ -649,19 +636,13 @@ def game_end_screen():
     st.title("🏆 Oyun Sonu: Krizler Tarihi")
     st.balloons()
     
-    # Final score and Leadership Style
     final_metrics = st.session_state.results
     leadership_score = (final_metrics['security'] + final_metrics['freedom'] + final_metrics['public_trust']) / 3
     
-    score_text = ""
-    if leadership_score > 75:
-        score_text = 'Mükemmel! Güvenlik, özgürlük ve kamu güvenini dengede tuttunuz.'
-    elif leadership_score > 55:
-        score_text = 'İyi iş, ama bazı alanlarda daha az maliyetli yollar mümkündü.'
-    else:
-        score_text = 'Zorlu bir yolculuktu. Daha fazla güvence ve hedefli önlem deneyin.'
+    if leadership_score > 75: score_text = 'Mükemmel! Güvenlik, özgürlük ve kamu güvenini dengede tuttunuz.'
+    elif leadership_score > 55: score_text = 'İyi iş, ama bazı alanlarda daha az maliyetli yollar mümkündü.'
+    else: score_text = 'Zorlu bir yolculuktu. Daha fazla güvence ve hedefli önlem deneyin.'
 
-    # Leadership Style Logic
     leadership_style = "Dengeli Stratejist"
     style_description = "Kararlarınızda güvenlik, özgürlük ve kamu güveni arasında bir denge kurmaya çalıştınız."
     if final_metrics['security'] > 75 and final_metrics['freedom'] < 50:
@@ -674,19 +655,16 @@ def game_end_screen():
         leadership_style = "Toplum İnşaatçısı"
         style_description = "Halkın güvenini kazanmaya ve uzun vadeli dayanıklılık oluşturmaya odaklandınız. Bu, sürdürülebilir bir yönetim anlayışını yansıtıyor."
 
-
     st.markdown(f"""
         <div class="crisis-card">
             <h3>Liderlik Performansınız</h3>
             <h2>Liderlik Skoru: {leadership_score:.1f}/100</h2>
-            <p><i>{score_text}</i></p>
-            <hr>
+            <p><i>{score_text}</i></p><hr>
             <h4>Liderlik Tarzınız: {leadership_style}</h4>
             <p>{style_description}</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Line chart of metric history
     history_df = pd.DataFrame(st.session_state.crisis_history)
     history_df['Kriz'] = [f"Kriz {i+1} Başlangıcı" for i in range(len(history_df))]
     history_df.loc[0, 'Kriz'] = "Oyun Başlangıcı"
@@ -701,15 +679,7 @@ def game_end_screen():
         y=alt.Y('Değer:Q', title='Puan', scale=alt.Scale(domain=[0, 100])),
         color=alt.Color('Gösterge:N', title='Metrikler', scale=alt.Scale(scheme='viridis')),
         tooltip=['Kriz', 'Gösterge', alt.Tooltip('Değer:Q', format='.1f')]
-    ).properties(
-        title='Krizler Boyunca Metrik Değişimleri',
-        height=400
-    ).configure_title(
-        fontSize=16,
-        anchor='middle'
-    ).configure_view(
-        stroke=None
-    )
+    ).properties(title='Krizler Boyunca Metrik Değişimleri', height=400).configure_title(fontSize=16, anchor='middle').configure_view(stroke=None)
     
     st.altair_chart(line_chart, use_container_width=True)
 
@@ -717,7 +687,6 @@ def game_end_screen():
         reset_game()
 
 # --- MAIN APPLICATION FLOW ---
-# The router that directs to the correct screen function.
 initialize_game_state()
 display_metrics_sidebar()
 
@@ -732,7 +701,6 @@ screen_functions = {
     'game_end': game_end_screen,
 }
 
-# Get the function for the current screen and call it
 current_screen_func = screen_functions.get(st.session_state.screen)
 if current_screen_func:
     current_screen_func()
@@ -740,3 +708,4 @@ if current_screen_func:
 else:
     st.error("Bir hata oluştu. Oyun yeniden başlatılıyor.")
     reset_game()
+
