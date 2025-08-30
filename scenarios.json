@@ -1,191 +1,266 @@
 {
-  "pandemic": {
-    "title": "Pandemi Krizi",
-    "icon": "🏥",
-    "story": "**Durum Raporu: Acil** Ada ülkesinde yeni bir varyant salgını patlak verdi. R(t) 1.5, hastaneler %80 dolu, yoğun bakım üniteleri sınırda.  \nSosyal medyada \"bitkisel tedavi mucizesi\" gibi sahte öneriler viral, aşı karşıtlığı %30 arttı.  \nİletişim ağları tıkanık, panik stokçuluğu marketleri vurdu.  \n**Görev**: CIO olarak, bilgi akışını düzenleyin, yanlış bilgiyi kontrol edin ve halk sağlığını korurken özgürlükleri dengeleyin.",
+  "earthquake": {
+    "title": "Deprem Krizi",
+    "icon": "🏚️",
+    "story": "Sabahın erken saatlerinde adayı 7.2 büyüklüğünde bir deprem vurdu. Baz istasyonlarının yaklaşık %40’ı çalışmıyor, sosyal medyada “yağma” söylentileri dolaşıyor ve yardım organizasyonu aksıyor. Halk korku içinde ve yanlış bilgiler, arama-kurtarma çalışmalarını zorlaştırıyor. **Görev**: İletişim ağlarını tekrar çalıştır, yanlış bilgileri kontrol et, can güvenliği ve özgürlüğü dengele.",
     "advisors": [
       {
-        "name": "Tuğgeneral Ayhan (Güvenlik)",
-        "text": "Hız kritik! Genel karantina ve sosyal medya içerik kaldırma hemen uygulanmalı. Trol çiftlikleriyle sahte anlatıları bastırırız. **Risk**: Meşruiyet kaybı, ama kaosu önler."
+        "name": "Güvenlik Uzmanı",
+        "text": "Sosyal medya panik yaratıyor. Sosyal medyayı yavaşlatalım ve yanlış bilgileri kaldır! ✅ Kaos azalır ❌ Bazıları gözetleniyor hissi yaşayabilir"
       },
       {
-        "name": "Av. Elif (Hukuk/Ombudsman)",
-        "text": "Geniş kısıtlamalar mahremiyeti ve ifade özgürlüğünü çökertir. Hedefli izleme ve şeffaflık şart. **Risk**: Yavaş hareket, ama meşruiyet korur."
+        "name": "Hukukçu",
+        "text": "Özgürlükleri kısıtlamadan da çözüm mümkün. Sadece acil internet trafiğine öncelik ver. Yardım noktaları, açık yollar, sağlık merkezleri her yerde yayınlansın. ✅ Güvenli ve sakin halk ❌ İşler biraz yavaş"
       },
       {
-        "name": "Dr. Mert (Siyasi Danışman)",
-        "text": "Halk panikte, şeffaf iletişim güven artırır. Prebunking ve fact-check kampanyalarıyla anlatıyı yönlendirin. **Risk**: Etki zaman alır."
+        "name": "Siyasi Danışman",
+        "text": "Herkesin görebileceği bir “bilgi ekranı” aç. Nerede yardım var, elektrik ve su durumu gibi bilgileri paylaş. Yanlış bilgileri resmi bilgilerle düzelt. ✅ Güven artar ❌ Organizasyon zaman alır"
       },
       {
-        "name": "Zeynep, CTO (Teknik)",
-        "text": "Decentralized izleme ve platformlarla MoU en verimli yol. Kendi acil platformumuzu devreye alalım, ama bağımsız yönetim şart. **Risk**: Teknik karmaşa."
+        "name": "İletişim Teknolojileri Uzmanı",
+        "text": "Toplu SMS gönder, acil yardım platformları üzerinden halka ulaş. ✅ Yardım koordinasyonu artar ❌ Teknik altyapı sorunları çıkabilir"
       }
     ],
     "action_cards": [
       {
         "id": "A",
-        "name": "Merkezi İzleme + Geniş Kaldırma + Karantina",
+        "name": "Sosyal Medyaya Etkin Müdahale",
         "cost": 50,
         "hr_cost": 20,
         "speed": "fast",
         "security_effect": 40,
         "freedom_cost": 30,
-        "side_effect_risk": 0.4,
+        "side_effect_risk": 0.45,
         "safeguard_reduction": 0.5,
-        "tooltip": "Hızlı ama özgürlük maliyeti yüksek. Meşruiyet riski var."
+        "tooltip": "Sosyal medyayı yavaşlat, geniş gözetim uygula. Yanlış bilgileri hızlıca kaldır.  \nArtısı (+): Kaos hızla azalır, koordinasyon artar\nEksisi (−): Özgürlük hissi azalır\nMaliyet: 50 💰 | İK: 20 👥 | Hız: Yüksek\n"
       },
       {
         "id": "B",
-        "name": "Hedefli İzleme + Platform MoU + Yerel Kısıtlama",
+        "name": "Platformlarla İşbirliği",
+        "cost": 30,
+        "hr_cost": 15,
+        "speed": "medium",
+        "security_effect": 28,
+        "freedom_cost": 15,
+        "side_effect_risk": 0.25,
+        "safeguard_reduction": 0.6,
+        "tooltip": "Yanlış bilgilerin yayılımını takip et, platformlarla işbirliği yap, \nArtısı (+): Halk güvenli ve sakin hisseder, özgürlük çok fazla etkilenmez. \nEksisi (−): Etki biraz yavaş. \nMaliyet: 30 💰 | İK: 15 👥 | Hız: Orta \n"
+      },
+      {
+        "id": "C",
+        "name": "Bilinçlendirme ve Medya Okuryazarlığı Kampanyası",
+        "cost": 20,
+        "hr_cost": 10,
+        "speed": "slow",
+        "security_effect": 16,
+        "freedom_cost": 5,
+        "side_effect_risk": 0.1,
+        "safeguard_reduction": 0.8,
+        "tooltip": "Halkı deprem konusunda bilinçlendir ve medya okuryazarlığı konusunda güçlendir \nArtısı (+): Uzun vadede bilinçli halk, özgürlük dostu\nEksisi (−): Etkisi yavaş, hemen sonuç vermez\nMaliyet: 20 💰 | İK: 10 👥 | Hız: Yavaş\n"
+      }
+    ],
+    "immediate_text": "Seçiminiz devreye girdi: {}. Arama-kurtarma ekiplerinin koordinasyonu %30 iyileşti. Bazı insanlar hâlâ internet erişiminde sorun yaşıyor. Medya ve halk, kararınızı tartışıyor.",
+    "delayed_text": "Yağma söylentileri %60 azaldı; yardım dağıtımı düzenlendi; bazı vatandaşlar gözetimden rahatsız; uluslararası ekipler kararını ‘etkili’ buldu."
+  },
+  "forest_fire": {
+    "title": "Orman Yangını",
+    "icon": "🔥",
+    "story": "Adanın nın güneyinde büyük orman yangını çıktı. Rüzgâr yön değiştiriyor, alevler hızla yerleşim bölge*lerine ilerliyor. İnternet ve iletişim ağları aşırı yük altında; insanlar doğru bilgiye ulaşamıyor ve iletişim hatları kilitlenmek üzere. Sosyal medyada yanlış tahliye haritaları dolaşıyor; bazıları insanları yanlış yollara yönlendiriyor, bazıları da yanlış alarm diyerek halkı evlerinde kalmaya ikna etmeye çalışıyor. Panik içindeki halk farklı yönlere kaçıyor, yollar tıkanıyor. **Görev**: Bilgi şefi olarak hem can güvenliğini sağlamak, hem de özgürlükleri koruyarak doğru bilgiyi halka ulaştırmak.",
+    "advisors": [
+      {
+        "name": "Güvenlik Uzmanı",
+        "text": "Bölgedeki sosyal medyayı kısıtla, sosyal medya platformlarında yayılan sahte tahliye rotalarını etkisiz hale getirmek için bu hesaplara kapat ve devletin troll çiftliklerini kullanarak doğru tahliye rotalarını paylaş\n✅ Hızlı, hayat kurtarır\n❌ Özgürlük azalır\n"
+      },
+      {
+        "name": "Hukukçu",
+        "text": "“Geniş kısıtlamalar ifade özgürlüğünü zedeler. Hedefli ve şeffaf iletişim daha doğru olur.Halk neden böyle bir adım attığımızı açıkça bilmeli.” \n✅Uzun vadede güven artırır\n❌ Daha yavaş, koordinasyon zor\n"
+      },
+      {
+        "name": "Akademisyen",
+        "text": "“Halkın yanlış bilgilere karşı dayanıklılığını artırabilmek için medya okuryazarlığı kampanyası başlatın. Böylece halk neyin doğru neyin yanlış olduğunu anlayabilir” \n✅Uzun vadede güven artırır\n❌Kriz anında etkisi zayıf\n"
+      },
+      {
+        "name": "İletişim Teknolojileri Uzmanı",
+        "text": "“Cep telefonlarına doğrudan uyarı (cell-broadcast) gönderelim ve platformlarla anlaşarak tek merkezden tahliyeyi hızlandıralım.” \n✅Hızlı ve teknik olarak etkili\n❌Koordinasyonu zor, altyapı hata yaparsa büyük panik olur\n"
+      }
+    ],
+    "action_cards": [
+      {
+        "id": "A",
+        "name": "Bilgi Ekosistemine Aktif Müdahale",
+        "cost": 40,
+        "hr_cost": 15,
+        "speed": "fast",
+        "security_effect": 35,
+        "freedom_cost": 25,
+        "side_effect_risk": 0.4,
+        "safeguard_reduction": 0.5,
+        "tooltip": "Yanlış tahliye haritalarını sosyal medyada çürütmek için kendi “karşı-trol” ekibini kullan ve yanlış bilgileri çürüt.\nArtısı (+): Yanlış bilgi hızla azalır\nEksisi (−): Özgürlük hissi azalır\nMaliyet: 40 💰 | İK: 15 👥 | Hız: Yüksek\n"
+      },
+      {
+        "id": "B",
+        "name": "Teknolojiyi Kullan",
         "cost": 30,
         "hr_cost": 15,
         "speed": "medium",
         "security_effect": 30,
-        "freedom_cost": 15,
-        "side_effect_risk": 0.2,
-        "safeguard_reduction": 0.7,
-        "tooltip": "Dengeli bir seçenek, güvencelerle daha etkili."
+        "freedom_cost": 14,
+        "side_effect_risk": 0.25,
+        "safeguard_reduction": 0.6,
+        "tooltip": "Cep telefonları üzerinden uyarı gönder, platformlarla iş birliği yap, kritik bölgelerde hedefli kısıtlamalar uygula ve doğru bilgi yay. \nArtısı (+): Halk doğru bilgiye hızlı ulaşır, özgürlük çok fazla etkilenmez\nEksisi (−): Teknik koordinasyon gerekli, bazı bölgelerde gecikme olabilir\nMaliyet: 30 💰 | İK: 15 👥 | Hız: Orta\n"
       },
       {
         "id": "C",
-        "name": "Prebunking + Okuryazarlık + Fact-Check + Uzman Paneli",
+        "name": "Medya ve STK'larla İşbirliği",
         "cost": 20,
         "hr_cost": 10,
         "speed": "slow",
-        "security_effect": 20,
-        "freedom_cost": 5,
-        "side_effect_risk": 0.1,
+        "security_effect": 14,
+        "freedom_cost": 4,
+        "side_effect_risk": 0.08,
         "safeguard_reduction": 0.8,
-        "tooltip": "Yavaş ama sürdürülebilir, özgürlük dostu."
+        "tooltip": "Bağımsız haberleri ve doğrulama mekanizmalarını halkla paylaş, medya okuryazarlığı kampanyası başlat.\nArtısı (+): Halkın uzun vadeli güveni artar, özgürlük dostu\nEksisi (−): Yavaş ilerler, hemen etkisi görülmez\nMaliyet: 20 💰 | İK: 10 👥 | Hız: Yavaş\n"
       }
     ],
-    "immediate_text": "Seçiminiz devreye girdi: {}. Hastane doluluğu %20 düştü, ancak bazı vatandaşlar 'gizli izleme' iddialarıyla sosyal medyada tepki gösterdi. Medya, kararınızı tartışıyor.",
-    "delayed_text": "**Olay Günlüğü: Bir Hafta Sonra** Yanlış bilgi yayılımı %40 azaldı, ancak bir yanlış kaldırma davası açıldı.  \nUluslararası sağlık örgütleri kararınızı 'orantılı' buldu, ama halkın bir kısmı şeffaflık talep ediyor.  \n**Not**: Güvenceler, özgürlük kaybını azalttı mı? Uzun vadeli etkiler dayanıklılığı nasıl etkiler?"
+    "immediate_text": "Seçtiğin çözüm hemen devreye girdi. \n\nTahliyeler hızlandı. İnternet kesintilerinden şikâyet var. Medya kararınızı sorguluyor.\n",
+    "delayed_text": "Yangın kontrol altına alındı, sahte tahliye haritalarının etkisi %50 azaldı.  \nAncak, bazı vatandaşlar iletişim kısıtlamalarından şikayetçi. \nUluslararası yardım ekipleri kararınızı 'etkili' buldu.  \n"
   },
-  "forest_fire": {
-    "title": "Orman Yangınları Krizi",
-    "icon": "🔥",
-    "story": "**Durum Raporu: Kritik** Ada ülkesinin güneyindeki ormanlar alevler içinde, rüzgâr yönü değişiyor. Sahte tahliye haritaları sosyal medyada yayılıyor, iletişim ağları aşırı yükte.  \nHalk panikte, yanlış yönlendirmeler tahliyeyi zorlaştırıyor.  \n**Görev**: CIO olarak, acil iletişim kanallarını açın, yanlış bilgiyi durdurun ve can güvenliğini özgürlüklerle dengeleyin.",
+  "pandemic": {
+    "title": "Salgın Hastalık",
+    "icon": "🏥",
+    "story": "Adada yeni ve hızla bulaşan bir hastalık ortaya çıktı. İlk vakalar küçük kasabalarda görüldü, ancak günler içinde şehir merkezine yayıldı. Hastaneler ve acil servisler dolup taşarken yataklar yetersiz kalıyor, sağlık çalışanları ise tükenme noktasına gelmiş durumda. Sosyal medyada bitkisel kürlerden ev yapımı ilaçlara kadar sahte tedavi yöntemleri dolaşıyor; kimileri hastalığın uydurma olduğunu savunuyor, kimileri ise aşı karşıtı komplo teorilerini yayıyor. Halkın bir kısmı devlete güvenip önlemlere uyarken, bir kısmı da “gerçek saklanıyor” diyerek kuralları hiçe sayıyor. Bu bilgi karmaşası hem salgının hızla yayılmasına hem de kamu güveninin zedelenmesine yol açıyor.\n\nGörev: Bilgi şefi olarak halkın güvenilir ve doğru sağlık bilgisine ulaşmasını sağla, yanlış bilgilerin yayılmasını engelle ve sağlık sisteminin çökmesini önle. Bunu yaparken hem halk sağlığını hem de özgürlükleri korumalı, aynı zamanda kamu güvenini güçlü tutmalısın. **Görev**: Bilgi şefi olarak halkın güvenilir ve doğru sağlık bilgisine ulaşmasını sağla, yanlış bilgilerin yayılmasını engelle ve sağlık sisteminin çökmesini önle. Bunu yaparken hem halk sağlığını hem de özgürlükleri korumalı, aynı zamanda kamu güvenini güçlü tutmalısın.",
     "advisors": [
       {
-        "name": "Tuğgeneral Ayhan (Güvenlik)",
-        "text": "Bölge genelinde sosyal medya kısıtlaması şart! Trol çiftlikleriyle doğru tahliye rotalarını duyururuz. **Risk**: Özgürlük kaybı, ama hayat kurtarır."
+        "name": "Halk Sağlığı Uzmanı",
+        "text": "Halkın hareketlerini gerçek zamanlı takip eden anonim bir harita oluştur. Riskli bölgelerini uyar ve güvenli bölgeleri göster.\n✅ Salgının yayılımı azalır, sağlık hizmetleri rahatlar\n❌ Mahremiyet tartışmaları çıkar, özgürlük hissi azalır\n"
       },
       {
-        "name": "Av. Elif (Hukuk/Ombudsman)",
-        "text": "Geniş kısıtlamalar ifade özgürlüğünü zedeler. Hedefli iletişim ve şeffaflık raporu gerekir. **Risk**: Yavaş etki, ama meşruiyet korur."
+        "name": "İletişim Teknolojileri Uzmanı",
+        "text": "Sahte tedavi ve yanlış bilgiler yayan sosyal medya hesaplarını tespit edip, halkın gördüğü uyarılarla anında düzelt\n✅ Yanlış bilgi hızlıca azalır\n❌ Bazı kullanıcılar sansür uygulandığını düşünebilir, teknolojiye bağımlıdır\n"
       },
       {
-        "name": "Dr. Mert (Siyasi Danışman)",
-        "text": "Halkı sakin tutmak için medya okuryazarlığı kampanyası başlatın. Doğrulanmış haritalar güven artırır. **Risk**: Zaman alır."
+        "name": "Hukukçu",
+        "text": "Olağanüstü hal kapsamında karantina ve seyahat kısıtlamalarını süreli ve yazılı olarak ilan et. Her kararın gerekçesini halka açık şekilde duyur.\n✅ Halkın güvenliği sağlanır, devletin meşruiyeti güçlenir\n❌ Aşırı kısıtlamalar güven kaybı yaratır, hak ihlali tartışmaları çıkar\n"
       },
       {
-        "name": "Zeynep, CTO (Teknik)",
-        "text": "Cell-broadcast ve platformlarla MoU ile tahliye bilgisini hızlandırırız. **Risk**: Teknik koordinasyon zorluğu."
+        "name": "Halk Sağlığı Uzmanı",
+        "text": "Mobil oyunlar üzerinden halkı eğlenceli ve etkileşimli biçimde doğru hijyen ve izolasyon yöntemlerine alıştır.\n✅ Uzun vadede bilinçli toplum, özgürlük dostu çözüm\n❌ Etkisi yavaş görülür ve herkes erişemez, teknik altyapı gerekir\n"
       }
     ],
     "action_cards": [
       {
         "id": "A",
-        "name": "Bölge Geniş Kısıtlama + Trol Karşı-Anlatı",
-        "cost": 40,
-        "hr_cost": 25,
+        "name": "Yaşam Tarzlarına Müdahale ",
+        "cost": 50,
+        "hr_cost": 20,
         "speed": "fast",
-        "security_effect": 35,
-        "freedom_cost": 25,
+        "security_effect": 38,
+        "freedom_cost": 28,
         "side_effect_risk": 0.35,
-        "safeguard_reduction": 0.6,
-        "tooltip": "Hızlı ama ifade özgürlüğünü riske atar."
+        "safeguard_reduction": 0.55,
+        "tooltip": "Halkın bulunduğu bölgeleri gösteren interaktif harita ile riskli alanları anında uyar.\nArtısı (+): İnsanlar güvenli bölgeleri görerek doğru hareket eder, sağlık hizmetlerine erişim artar, ve hastalık yayılımı azalır.  \nEksisi (−): Özgürlük ve mahremiyet ciddi şekilde kısıtlanır.\nMaliyet: 50 💰 | İK: 20 👥 | Hız: Yüksek\n"
       },
       {
         "id": "B",
-        "name": "Cell-Broadcast + Zero-Rating Acil Siteler + Platform MoU",
-        "cost": 25,
+        "name": "Sivil Toplum ve Yerelle İşbirliği",
+        "cost": 30,
         "hr_cost": 15,
         "speed": "medium",
-        "security_effect": 30,
-        "freedom_cost": 10,
-        "side_effect_risk": 0.15,
-        "safeguard_reduction": 0.75,
-        "tooltip": "Orta hızda, özgürlük dostu bir seçenek."
+        "security_effect": 26,
+        "freedom_cost": 12,
+        "side_effect_risk": 0.2,
+        "safeguard_reduction": 0.6,
+        "tooltip": "Mahalle liderleri ve gönüllüler aracılığıyla yerel bilgilendirme ve hızlı yardım ağı kur.\nArtısı (+): Hızlı müdahale sayesinde halkın güvenliği ve sağlık hakkı korunur \nEksisi (−): Koordinasyon zor; bazı bölgelerde etkisi sınırlı \nMaliyet: 30 💰 | İK: 15 👥 | Hız: Orta\n"
       },
       {
         "id": "C",
-        "name": "Bağımsız Medya Sahadan Canlı + Fact-Check Hızlı Şerit",
-        "cost": 15,
+        "name": "Bilgilendirme Kampanyası",
+        "cost": 20,
         "hr_cost": 10,
         "speed": "slow",
-        "security_effect": 25,
+        "security_effect": 15,
         "freedom_cost": 5,
         "side_effect_risk": 0.1,
-        "safeguard_reduction": 0.85,
-        "tooltip": "Yavaş, düşük riskli ve dayanıklılığı artırır."
+        "safeguard_reduction": 0.8,
+        "tooltip": "İnsanları sahte tedavi ve yanlış bilgiler konusunda bilinçlendir, oyun tabanlı eğitimler ile öğrenmelerini sağla.\nArtısı (+): Uzun vadeli etkili, özgürlük dostu, bilinçli halk\nEksisi (−): Teknik altyapı gerekir, etkisi yavaş\nMaliyet: 20 💰 | İK: 10 👥 | Hız: Yavaş\n"
       }
     ],
-    "immediate_text": "Seçiminiz devreye girdi: {}. Tahliye işlemleri hızlandı, ancak bazı bölgelerde internet kesintileri şikayetlere yol açtı. Yerel medya, kararınızı sorguluyor.",
-    "delayed_text": "**Olay Günlüğü: Birkaç Gün Sonra** Yangın kontrol altına alındı, sahte haritaların etkisi %50 azaldı.  \nAncak, bazı vatandaşlar iletişim kısıtlamalarından şikayetçi. Uluslararası yardım ekipleri kararınızı 'etkili' buldu.  \n**Not**: Şeffaflık, halkın güvenini nasıl etkiledi? Dayanıklılık gelecek krizlerde ne kadar önemli?"
+    "immediate_text": "Seçiminiz devreye giriyor: {} Sağlık uyarıları ve bilgilendirmeler yayılıyor, hastalar doğru bilgilere ulaşıyor. Bazı bölgelerde internet ve sağlık hizmetlerine erişim sorunları devam ediyor. Medya ve halk, kararınızı tartışıyor.\n",
+    "delayed_text": "Yanlış tedavi ve yanlış bilgiler %60 azaldı. Halk daha bilinçli, sağlık hizmetleri daha düzenli çalışıyor. \n"
   },
-  "earthquake": {
-    "title": "Deprem Krizi",
-    "icon": "🌍",
-    "story": "**Durum Raporu: Acil** Ada ülkesinde 7.2 büyüklüğünde bir deprem vurdu. Baz istasyonlarının %40’ı devre dışı, “yağma” söylentileri sosyal medyada yayılıyor, yardım koordinasyonu aksıyor.  \nHalk korku içinde, yanlış bilgiler arama-kurtarma çalışmalarını zorlaştırıyor.  \n**Görev**: CIO olarak, iletişim ağlarını restore edin, yanlış bilgiyi kontrol edin ve can güvenliğini özgürlüklerle dengeleyin.",
+  "election": {
+    "title": "Seçim Dönemi",
+    "icon": "🗳️",
+    "story": "Ada halkı, önümüzdeki haftalarda yapılacak kritik seçimlere hazırlanıyor. Ancak dijital ortamda ciddi bir bilgi kirliliği yaşanıyor. Deepfake videolar adayları hiç söylemedikleri sözleri söylemiş gibi gösteriyor, sahte görseller ve manipüle edilmiş konuşmalar hızla yayılıyor. Sosyal medyada dolaşan komplo teorileri ve uydurma haberler, halkın doğruyu yanlıştan ayırt etmesini zorlaştırıyor. Bir kısım vatandaş bu içeriklere inanırken, diğerleri de “gerçek bilgiye ulaşılamıyor” diyerek seçimlere güvenini kaybediyor. Medya kanalları arasında kutuplaşma artarken, bazı gruplar seçim sürecinin adil olmayacağını iddia ediyor. **Görev**: Görevin, seçim sürecinde yanlış bilgileri ve deepfake içerikleri tespit edip etkilerini azaltmak, halkın doğru bilgiye erişimini sağlamak ve seçim güvenliğini korumak. Bunu yaparken hem halkın özgürlüklerini gözetmeli, hem de kamu güvenini ve seçim sürecine olan inancı güçlü tutmalısın.",
     "advisors": [
       {
-        "name": "Tuğgeneral Ayhan (Güvenlik)",
-        "text": "Ülke çapı içerik yavaşlatma ve geniş gözetim hemen uygulanmalı! **Risk**: Özgürlük kaybı, ama kaosu önler."
+        "name": "Siyasal İletişim Uzmanı",
+        "text": "Deepfake içerikleri tespit edebilen ileri algoritmalar kullan. Vatandaş sahte bir video izlediğinde ekranında ‘Bu içerik manipüle edilmiş olabilir’ uyarısı çıksın. Doğru bilgiye yönlendir.\n✅ Yanlış bilgilerin etkisi hızla azalır\n❌ Bazı kullanıcılar sansür uygulandığını düşünebilir\n"
       },
       {
-        "name": "Av. Elif (Hukuk/Ombudsman)",
-        "text": "Hedefli trafik önceliği ve şeffaflık raporu şart. Geniş gözetim mahremiyeti zedeler. **Risk**: Yavaş etki."
+        "name": "Akademisyen",
+        "text": "Resmi platformlarda adayların gerçek konuşmalarını ve politikalarını içeren videolar yayınlayın.\n✅ Halk güvenilir bilgiye ulaşır, seçim süreci şeffaf görünür\n❌Bazı kişiler resmi kaynaklara güvenmeyebilir.\n"
       },
       {
-        "name": "Dr. Mert (Siyasi Danışman)",
-        "text": "Halkın güvenini kazanmak için fact-check şeridi ve açık veri panosu kullanın. **Risk**: Organizasyon zaman alır."
+        "name": "Siber Güvenlik Uzmanı",
+        "text": "Mahalle liderleri ve gönüllüler aracılığıyla sahada doğru bilgiyi yay. İnsanlar yüz yüze temasla daha kolay ikna olur. \n✅ Toplumsal güveni artırır, halkın katılımı yükselir\n❌Koordinasyon zorlukları yaşanabilir, bazı bölgelerde etkisi sınırlı olabilir.\n"
       },
       {
-        "name": "Zeynep, CTO (Teknik)",
-        "text": "Cell-broadcast ve platformlarla MoU ile yardım koordinasyonunu hızlandırırız. **Risk**: Teknik altyapı sınırlı."
+        "name": "Hukukçu",
+        "text": "Seçim sürecinde alınan her içerik denetim kararı şeffaf ve itiraz edilebilir olmalı. Halk bilmezse ‘gizli sansür’ şüphesi büyür.\n✅ Kamu güveni artar, özgürlükler korunur\n❌ Bürokratik süreçler yavaşlatabilir, hızlı tepkiyi zorlaştırır\n"
       }
     ],
     "action_cards": [
       {
         "id": "A",
-        "name": "Ülke Çapı İçerik Yavaşlatma + Geniş Gözetim",
-        "cost": 45,
-        "hr_cost": 30,
+        "name": "Kullanıcıları Uyarma ve Bilgilendirme",
+        "cost": 40,
+        "hr_cost": 15,
         "speed": "fast",
-        "security_effect": 45,
-        "freedom_cost": 35,
-        "side_effect_risk": 0.45,
-        "safeguard_reduction": 0.5,
-        "tooltip": "Hızlı ama yüksek özgürlük maliyeti."
+        "security_effect": 33,
+        "freedom_cost": 18,
+        "side_effect_risk": 0.3,
+        "safeguard_reduction": 0.55,
+        "tooltip": "Deepfake tespiti ve uyarı sistemi ku, sahte içerikleri işaretle ve kullanıcıları “Bu içerik manipüle edilmiş olabilir” uyarısıyla bilgilendir. Bu deepfake içerikleri tespit eder ve kullanıcıları uyarır.\nArtıları: Yanlış bilgilerin yayılmasını engeller\nEksileri: Bazı kullanıcılar sansür uygulandığını düşünebilir.\nMaliyet: 40 💰 | İK: 15 👥 | Hız: Yüksek\n"
       },
       {
         "id": "B",
-        "name": "Hedefli Trafik Önceliği + Platform MoU + Doğrulanmış Yardım Noktaları",
-        "cost": 35,
-        "hr_cost": 20,
+        "name": "Doğrusunu Göster!",
+        "cost": 30,
+        "hr_cost": 15,
         "speed": "medium",
-        "security_effect": 35,
-        "freedom_cost": 15,
-        "side_effect_risk": 0.25,
-        "safeguard_reduction": 0.7,
-        "tooltip": "Dengeli, güvencelerle daha etkili."
+        "security_effect": 24,
+        "freedom_cost": 8,
+        "side_effect_risk": 0.15,
+        "safeguard_reduction": 0.65,
+        "tooltip": "Adayların gerçek konuşmalarını ve politikalarını resmi platformlarda paylaş, doğrulanmış içerikleri yaygınlaştır.\nArtısı (+): Halk doğru bilgiye ulaşır, özgür seçim hakkı korunur\nEksisi (−): Bazı kişiler resmi kaynaklara güvenmeyebilir\nMaliyet: 30 💰 | İK: 15 👥 | Hız: Orta\n"
       },
       {
         "id": "C",
-        "name": "Bağımsız Medya Hasar Doğrulama + Açık Veri Panosu",
-        "cost": 25,
-        "hr_cost": 15,
+        "name": "Bilinçlendir ve Farkındalık Yarat",
+        "cost": 20,
+        "hr_cost": 10,
         "speed": "slow",
-        "security_effect": 30,
-        "freedom_cost": 10,
-        "side_effect_risk": 0.15,
+        "security_effect": 12,
+        "freedom_cost": 3,
+        "side_effect_risk": 0.08,
         "safeguard_reduction": 0.8,
-        "tooltip": "Yavaş ama özgürlük dostu ve dayanıklı."
+        "tooltip": "Halkı medya okuryazarlığı ve deepfake farkındalığı konusunda eğitir; interaktif oyunlar, videolar ve okul eğitimleri ile sahte içeriklere karşı bilinçlendirir.\nArtısı (+): Uzun vadede halk bilinçli olur, sahte bilgiler azalır, özgürlük dostu\nEksisi (−): Hızlı etkisi yok; seçim sürecinde hemen etkili olmaz. \nMaliyet: 20 💰 | İK: 10 👥 | Hız: Yavaş\n"
+      },
+      {
+        "id": "D",
+        "name": "Şeffaflık Politikası",
+        "cost": 25,
+        "hr_cost": 12,
+        "speed": "slow",
+        "security_effect": 14,
+        "freedom_cost": 4,
+        "side_effect_risk": 0.05,
+        "safeguard_reduction": 0.85,
+        "tooltip": "Uygulanan tüm içerik denetimi kararlarını halka açık bir portala kaydet; vatandaşların doğrudan itiraz edebileceği bağımsız bir kurul kur.\nArtısı (+): Kamu güveni artar, özgürlükler korunur\nEksisi (−): Bürokratik süreçler hızlı tepkiyi zorlaştırır; yanlış bilgi bir süre daha yayılabilir\nMaliyet: ? 💰 | İK: ? 👥 | Hız: Yavaş\n"
       }
     ],
-    "immediate_text": "Seçiminiz devreye girdi: {}. Arama-kurtarma ekipleri koordinasyonu %30 iyileşti, ancak bazı kullanıcılar internet erişim sorunu bildirdi. Medya, kararınızı tartışıyor.",
-    "delayed_text": "**Olay Günlüğü: Birkaç Gün Sonra** Yağma söylentileri %60 azaldı, yardım dağıtımı verimli hale geldi.  \nAncak, bazı vatandaşlar gözetimden rahatsız. Uluslararası kurtarma ekipleri kararınızı 'etkili' buldu.  \n**Not**: Güvenceler meşruiyeti nasıl etkiledi? Dayanıklılık gelecekte ne kadar kritik?"
+    "immediate_text": "Seçilen aksiyon devreye giriyor: {}\nBazı deepfake içerikler durduruldu, ancak kafa karışıklığı devam ediyor.\n",
+    "delayed_text": "Deepfake ve yanlış bilgilerin etkisi %50 azaldı.\nBazı vatandaşlar “gözetleniyor veya sansürleniyor” hissi yaşadı.\nUluslararası gözlemciler müdahaleni “etkili ama hassas” olarak değerlendirdi.\n"
   }
 }

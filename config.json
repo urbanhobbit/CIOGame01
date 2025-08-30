@@ -1,0 +1,36 @@
+{
+  "game_balance": {
+    "THREAT_SEVERITY": 80,
+    "RANDOM_FACTOR_RANGE": [
+      0.1,
+      0.3
+    ],
+    "SCOPE_MULTIPLIERS": {
+      "targeted": 0.7,
+      "general": 1.3
+    },
+    "DURATION_MULTIPLIERS": {
+      "short": 0.5,
+      "medium": 1.0,
+      "long": 1.5
+    },
+    "SAFEGUARD_QUALITY_PER_ITEM": 0.2,
+    "TRUST_BOOST_FOR_TRANSPARENCY": 10,
+    "FATIGUE_PER_DURATION": {
+      "targeted": 5,
+      "general": 10
+    }
+  },
+  "initial_settings": {
+    "metrics": {
+      "security": 40,
+      "freedom": 70,
+      "public_trust": 50,
+      "resilience": 30,
+      "fatigue": 10
+    },
+    "budget": 100,
+    "hr": 50,
+    "max_crises": 3
+  }
+}
