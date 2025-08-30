@@ -296,7 +296,7 @@ def display_metrics_sidebar():
     st.sidebar.header("📊 Durum Panosu")
     
     # Show current crisis count
-    if 'crisis_sequence' in st.session_state and st.session_state.crisis_sequence:
+    if 'crisis_sequence' in st.session_state and st.session_state.crisis_sequence and st.session_state.screen != 'game_end':
         st.sidebar.markdown(f"### KRİZ {st.session_state.current_crisis_index + 1} / {len(st.session_state.crisis_sequence)}")
 
     settings = st.session_state.config['initial_settings']
@@ -304,13 +304,13 @@ def display_metrics_sidebar():
     INITIAL_HR = settings['hr']
     
     metrics_data = [
-        ('Bütçe', st.session_state.budget, INITIAL_BUDGET),
-        ('İnsan Kaynağı', st.session_state.human_resources, INITIAL_HR),
-        ('Güvenlik', st.session_state.metrics['security'], 100),
-        ('Özgürlük', st.session_state.metrics['freedom'], 100),
-        ('Kamu Güveni', st.session_state.metrics['public_trust'], 100),
-        ('Dayanıklılık', st.session_state.metrics['resilience'], 100),
-        ('Uyum Yorgunluğu', st.session_state.metrics['fatigue'], 100)
+        ('💰 Bütçe', st.session_state.budget, INITIAL_BUDGET),
+        ('👥 İnsan Kaynağı', st.session_state.human_resources, INITIAL_HR),
+        ('🛡️ Güvenlik', st.session_state.metrics['security'], 100),
+        ('🗽 Özgürlük', st.session_state.metrics['freedom'], 100),
+        ('🤝 Kamu Güveni', st.session_state.metrics['public_trust'], 100),
+        ('💪 Dayanıklılık', st.session_state.metrics['resilience'], 100),
+        ('😩 Uyum Yorgunluğu', st.session_state.metrics['fatigue'], 100)
     ]
     for name, value, max_value in metrics_data:
         st.sidebar.markdown(f"**{name}**")
@@ -352,6 +352,16 @@ def display_news_ticker():
         st.markdown(f"<p>• {news_item}</p>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
+def format_advisor_text(text: str) -> str:
+    """Formats advisor text to highlight pros and cons with colors."""
+    if '✅' in text:
+        main_part, pro_con_part = text.split('✅', 1)
+        if '❌' in pro_con_part:
+            pro_part, con_part = pro_con_part.split('❌', 1)
+            return f"{main_part}<br>✅<strong style='color:green;'>{pro_part.strip()}</strong><br>❌<strong style='color:red;'>{con_part.strip()}</strong>"
+        else:
+            return f"{main_part}<br>✅<strong style='color:green;'>{pro_con_part.strip()}</strong>"
+    return text
 
 # --- SCREEN RENDERERS ---
 # Functions responsible for drawing each screen of the game.
@@ -419,9 +429,10 @@ def advisors_screen():
     cols = st.columns(len(scenario.advisors))
     for i, advisor in enumerate(scenario.advisors):
         with cols[i]:
+            formatted_text = format_advisor_text(advisor.text)
             st.markdown(f"""
             <div class="crisis-card">
-                <h5>{advisor.name}</h5><hr><p>{advisor.text}</p>
+                <h5>{advisor.name}</h5><hr><p>{formatted_text}</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -467,7 +478,10 @@ def decision_screen():
                 st.markdown(f"""
                     <div class="crisis-card" style="{border_style}">
                         <h5>{card.name}</h5><p>{card.tooltip}</p>
-                        <small>Maliyet: {card.cost} 💰 | HR: {card.hr_cost} 👥 | Hız: {card.speed.capitalize()}</small>
+                        <small>
+                            Maliyet: {card.cost} 💰 | HR: {card.hr_cost} 👥 | Hız: {card.speed.capitalize()}<br>
+                            Etki: <span style="color:green;">🛡️ +{card.security_effect}</span> | <span style="color:red;">🗽 -{card.freedom_cost}</span>
+                        </small>
                     </div>
                 """, unsafe_allow_html=True)
                 if st.button("Bunu Seç", key=f"select_{card.id}", disabled=not is_affordable):
@@ -509,29 +523,47 @@ def decision_screen():
 
 def immediate_screen():
     results = st.session_state.results
-    old_metrics = st.session_state.metrics
+    old_metrics = st.session_state.crisis_history[st.session_state.current_crisis_index]
+    scenario = get_scenarios()[st.session_state.selected_scenario_id]
 
     st.title("Anında Etki")
     display_news_ticker()
 
     if st.session_state.decision.get('skipped'):
         immediate_text = "Kaynak yetersizliği nedeniyle hükümet krize müdahale edemedi. Bu durum, krizin etkilerini derinleştirdi ve halk arasında endişeye yol açtı."
+        st.markdown(f'<div class="crisis-card"><h3>Olay Günlüğü</h3><p>{immediate_text}</p></div>', unsafe_allow_html=True)
     else:
-        scenario = get_scenarios()[st.session_state.selected_scenario_id]
-        action_name = next(card.name for card in scenario.action_cards if card.id == st.session_state.decision['action'])
-        immediate_text = scenario.immediate_text.format(f"<b>{action_name}</b>")
-    
-    st.markdown(f"""
-        <div class="crisis-card">
-            <h3>Olay Günlüğü</h3><p>{immediate_text}</p>
-            <h4>Durum Güncellemesi</h4>
-            <ul>
-                <li><strong>Güvenlik</strong>: <span class="{'metric-positive' if results['security'] > old_metrics['security'] else 'metric-negative'}">{results['security']:.1f}</span> – Krizin acil etkileri hafifledi.</li>
-                <li><strong>Özgürlük</strong>: <span class="{'metric-positive' if results['freedom'] > old_metrics['freedom'] else 'metric-negative'}">{results['freedom']:.1f}</span> – Kapsam ve süre özgürlükleri etkiledi.</li>
-                <li><strong>Kamu Güveni</strong>: <span class="{'metric-positive' if results['public_trust'] > old_metrics['public_trust'] else 'metric-negative'}">{results['public_trust']:.1f}</span> – Şeffaflık tepkileri şekillendirdi.</li>
-            </ul>
-        </div>
-    """, unsafe_allow_html=True)
+        action = next(card for card in scenario.action_cards if card.id == st.session_state.decision['action'])
+        immediate_text = scenario.immediate_text.format(f"<b>{action.name}</b>")
+        
+        st.markdown(f'<div class="crisis-card"><h3>Olay Günlüğü</h3><p>{immediate_text}</p></div>', unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            old_budget = results['budget'] + action.cost
+            old_hr = results['human_resources'] + action.hr_cost
+            st.markdown(f"""
+            <div class="crisis-card" style="height: 100%;">
+                <h4>💰 Kaynaklardaki Değişim</h4><hr>
+                <ul>
+                    <li><strong>Bütçe</strong>: {old_budget:.0f} ➡️ <span class="metric-negative">{results['budget']:.0f}</span> (-{action.cost})</li>
+                    <li><strong>İnsan Kaynağı</strong>: {old_hr:.0f} ➡️ <span class="metric-negative">{results['human_resources']:.0f}</span> (-{action.hr_cost})</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div class="crisis-card" style="height: 100%;">
+                <h4>📊 Metriklerdeki Değişim</h4><hr>
+                <ul>
+                    <li><strong>Güvenlik</strong>: {old_metrics['security']:.1f} ➡️ <span class="{'metric-positive' if results['security'] > old_metrics['security'] else 'metric-negative'}">{results['security']:.1f}</span> ({results['security'] - old_metrics['security']:+.1f})</li>
+                    <li><strong>Özgürlük</strong>: {old_metrics['freedom']:.1f} ➡️ <span class="{'metric-positive' if results['freedom'] > old_metrics['freedom'] else 'metric-negative'}">{results['freedom']:.1f}</span> ({results['freedom'] - old_metrics['freedom']:+.1f})</li>
+                    <li><strong>Kamu Güveni</strong>: {old_metrics['public_trust']:.1f} ➡️ <span class="{'metric-positive' if results['public_trust'] > old_metrics['public_trust'] else 'metric-negative'}">{results['public_trust']:.1f}</span> ({results['public_trust'] - old_metrics['public_trust']:+.1f})</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
 
     if st.button("Bir Süre Sonra..."):
         st.session_state.screen = 'delayed'
@@ -602,7 +634,7 @@ def report_screen():
 
     st.markdown(f"""
         <div class="crisis-card">
-            <h3>Karşı-Olgu Analizi</h3>
+            <h3>📊 Karşı-Olgu Analizi</h3>
             <p><i>{st.session_state.results['counter_factual']}</i></p>
             <p><strong>Analiz:</strong> Geniş kapsam veya uzun süre, ifade ve mahremiyeti etkiledi. Seçtiğiniz <strong>{len(st.session_state.decision.get('safeguards', []))} güvence</strong>, özgürlük kaybını yaklaşık %{len(st.session_state.decision.get('safeguards', [])) * 15} oranında azalttı.</p>
         </div>
@@ -610,7 +642,7 @@ def report_screen():
 
     st.markdown("""
         <div class="crisis-card">
-            <h3>Gerçek Dünya Bağlantısı</h3>
+            <h3>🔗 Gerçek Dünya Bağlantısı</h3>
             <p>Kararlarınız, gerçek dünyadaki yönetişim ilkeleriyle örtüşüyor:</p>
             <ul>
                 <li><strong>Gerekli ve Orantılı Olma</strong>: AB Veri Koruma Kuralları (GDPR) gibi düzenlemeler, müdahalelerin hedefe yönelik ve orantılı olmasını vurgular.</li>
